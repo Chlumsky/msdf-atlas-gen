@@ -62,7 +62,7 @@ OUTPUT SPECIFICATION - one or more can be specified
 
 GLYPH CONFIGURATION
   -size <EM size>
-      Specified the size of the glyphs in the atlas bitmap in pixels per EM.
+      Specifies the size of the glyphs in the atlas bitmap in pixels per EM.
   -minsize <EM size>
       Specifies the minimum size. The largest possible size that fits the same atlas dimensions will be used.
   -emrange <EM range>
