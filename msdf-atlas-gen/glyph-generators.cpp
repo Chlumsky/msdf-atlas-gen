@@ -36,7 +36,8 @@ void msdfGenerator(const msdfgen::BitmapRef<float, 3> &output, const GlyphGeomet
         invertColor(output);
     if (attribs.scanlinePass)
         msdfgen::distanceSignCorrection(output, glyph.getShape(), glyph.getBoxScale(), glyph.getBoxTranslate(), MSDF_ATLAS_GLYPH_FILL_RULE);
-    msdfgen::msdfErrorCorrection(output, attribs.errorCorrectionThreshold/(glyph.getBoxScale()*glyph.getBoxRange()));
+    if (attribs.errorCorrectionThreshold > 0)
+        msdfgen::msdfErrorCorrection(output, attribs.errorCorrectionThreshold/(glyph.getBoxScale()*glyph.getBoxRange()));
 }
 
 void mtsdfGenerator(const msdfgen::BitmapRef<float, 4> &output, const GlyphGeometry &glyph, const GeneratorAttributes &attribs) {
@@ -45,7 +46,8 @@ void mtsdfGenerator(const msdfgen::BitmapRef<float, 4> &output, const GlyphGeome
         invertColor(output);
     if (attribs.scanlinePass)
         msdfgen::distanceSignCorrection(output, glyph.getShape(), glyph.getBoxScale(), glyph.getBoxTranslate(), MSDF_ATLAS_GLYPH_FILL_RULE);
-    msdfgen::msdfErrorCorrection(output, attribs.errorCorrectionThreshold/(glyph.getBoxScale()*glyph.getBoxRange()));
+    if (attribs.errorCorrectionThreshold > 0)
+        msdfgen::msdfErrorCorrection(output, attribs.errorCorrectionThreshold/(glyph.getBoxScale()*glyph.getBoxRange()));
 }
 
 }
