@@ -171,7 +171,6 @@ bool Charset::load(const char *filename) {
                         goto FAIL;
                     unicodeBuffer.clear();
                     buffer.clear();
-                    state = TIGHT;
                     break;
                 case '"': // string of UTF-8 characters
                     if (state != CLEAR)

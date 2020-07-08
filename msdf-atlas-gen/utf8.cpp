@@ -19,7 +19,7 @@ void utf8Decode(std::vector<unicode_t> &codepoints, const char *utf8String) {
             rBytes = 0;
         } else if (*c&0x40) {
             int block;
-            for (block = 0; (*c<<block)&0x40 && block < 4; ++block);
+            for (block = 0; ((unsigned char) *c<<block)&0x40 && block < 4; ++block);
             if (block < 4) {
                 cp = (*c&(0x3f>>block))<<(6*block);
                 rBytes = block;
