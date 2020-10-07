@@ -14,6 +14,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+find_package (Threads REQUIRED)
+
 #----------------------------------------------------------------
 # Support Functions
 #----------------------------------------------------------------
@@ -67,4 +69,4 @@ target_link_libraries(lib_msdf-atlas-gen lib_msdfgen)
 
 add_executable(msdf-atlas-gen msdf-atlas-gen/main.cpp)
 target_compile_definitions(msdf-atlas-gen PRIVATE MSDF_ATLAS_STANDALONE)
-target_link_libraries(msdf-atlas-gen lib_msdf-atlas-gen lib_msdfgen)
+target_link_libraries(msdf-atlas-gen lib_msdf-atlas-gen lib_msdfgen ${CMAKE_THREAD_LIBS_INIT})
