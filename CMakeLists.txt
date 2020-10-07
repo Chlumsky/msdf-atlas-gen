@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.10)
 
 project(msdf-atlas-gen)
 
@@ -63,10 +63,10 @@ folderize_sources(msdf-atlas-gen_SOURCES ${CMAKE_SOURCE_DIR})
 
 add_library(lib_msdf-atlas-gen ${msdfgen_SOURCES} ${msdfgen_HEADERS})
 set_target_properties(lib_msdf-atlas-gen PROPERTIES OUTPUT_NAME msdf-atlas-gen)
-target_link_libraries(lib_msdf-atlas-gen lib_msdfgen)
+target_link_libraries(lib_msdf-atlas-gen msdfgen::msdfgen msdfgen::msdfgen-ext)
 
 # Build the executable
 
 add_executable(msdf-atlas-gen msdf-atlas-gen/main.cpp)
 target_compile_definitions(msdf-atlas-gen PRIVATE MSDF_ATLAS_STANDALONE)
-target_link_libraries(msdf-atlas-gen lib_msdf-atlas-gen lib_msdfgen ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(msdf-atlas-gen lib_msdf-atlas-gen msdfgen::msdfgen msdfgen::msdfgen-ext ${CMAKE_THREAD_LIBS_INIT})
