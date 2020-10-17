@@ -2,7 +2,7 @@
 #pragma once
 
 /*
- * MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.0 (2020-03-08)
+ * MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.1 (2020-10-18)
  * ---------------------------------------------------------------------
  * A utility by Viktor Chlumsky, (c) 2020
  *
@@ -38,4 +38,4 @@
 #include "json-export.h"
 #include "shadron-preview-generator.h"
 
-#define MSDF_ATLAS_VERSION "1.0"
+#define MSDF_ATLAS_VERSION "1.1"

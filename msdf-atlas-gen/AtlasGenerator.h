@@ -31,8 +31,8 @@ public:
 
 /// Configuration of signed distance field generator
 struct GeneratorAttributes {
-    bool overlapSupport = true;
-    bool scanlinePass = true;
+    bool overlapSupport = false;
+    bool scanlinePass = false;
     double errorCorrectionThreshold = MSDFGEN_DEFAULT_ERROR_CORRECTION_THRESHOLD;
 };
 

@@ -100,9 +100,11 @@ Any subset of the following may be specified:
 - `-angle <angle>` &ndash; sets the minimum angle between adjacent edges to be considered a corner. Append D for degrees (`msdf` / `mtsdf` only)
 - `-errorcorrection <threshold>` &ndash; sets the threshold used to detect and correct potential artifacts. 0 disables error correction (`msdf` / `mtsdf` only)
 - `-miterlimit <value>` &ndash; sets the miter limit that limits the extension of each glyph's bounding box due to very sharp corners (`psdf` / `msdf` / `mtsdf` only)
-- `-nooverlap` &ndash; disables resolution of overlapping contours
-- `-noscanline` &ndash; disables the scanline pass, which corrects the distance field's signs according to the non-zero fill rule
+- `-overlap` &ndash; switches to distance field generator with support for overlapping contours
+- `-nopreprocess` &ndash; disables path preprocessing which resolves self-intersections and overlapping contours
+- `-scanline` &ndash; performs an additional scanline pass to fix the signs of the distances
 - `-seed <N>` &ndash; sets the initial seed for the edge coloring heuristic
+- `-threads <N>` &ndash; sets the number of threads for the parallel computation (0 = auto)
 
 ## Character set specification syntax
 

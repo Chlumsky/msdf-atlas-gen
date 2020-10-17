@@ -4,6 +4,7 @@
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <algorithm>
 
 namespace msdf_atlas {
 
@@ -42,7 +43,7 @@ bool Workload::finish(int threadCount) {
     if (threadCount == 1 || chunks == 1)
         return finishSequential();
     if (threadCount > 1)
-        return finishParallel(threadCount);
+        return finishParallel(std::min(threadCount, chunks));
     return false;
 }
 

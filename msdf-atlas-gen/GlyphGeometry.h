@@ -14,7 +14,7 @@ class GlyphGeometry {
 public:
     GlyphGeometry();
     /// Loads glyph geometry from font
-    bool load(msdfgen::FontHandle *font, unicode_t codepoint);
+    bool load(msdfgen::FontHandle *font, unicode_t codepoint, bool preprocessGeometry = true);
     /// Applies edge coloring to glyph shape
     void edgeColoring(double angleThreshold, unsigned long long seed);
     /// Computes the dimensions of the glyph's box as well as the transformation for the generator function
@@ -27,8 +27,6 @@ public:
     const msdfgen::Shape & getShape() const;
     /// Returns the glyph's advance
     double getAdvance() const;
-    /// Returns true if the shape has reverse winding
-    bool isWindingReverse() const;
     /// Outputs the position and dimensions of the glyph's box in the atlas
     void getBoxRect(int &x, int &y, int &w, int &h) const;
     /// Outputs the dimensions of the glyph's box in the atlas
@@ -52,7 +50,6 @@ private:
     unicode_t codepoint;
     msdfgen::Shape shape;
     msdfgen::Shape::Bounds bounds;
-    bool reverseWinding;
     double advance;
     struct {
         struct {
@@ -62,9 +59,6 @@ private:
         double scale;
         msdfgen::Vector2 translate;
     } box;
-
-    /// Computes the signed distance from point p in a naive way
-    double simpleSignedDistance(const msdfgen::Point2 &p) const;
 
 };
 

@@ -1,6 +1,6 @@
 
 /*
-* MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.0 (2020-03-08) - standalone console program
+* MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.1 (2020-10-18) - standalone console program
 * --------------------------------------------------------------------------------------------------
 * A utility by Viktor Chlumsky, (c) 2020
 *
@@ -27,9 +27,17 @@ using namespace msdf_atlas;
 #define GLYPH_FILL_RULE msdfgen::FILL_NONZERO
 #define MCG_MULTIPLIER 6364136223846793005ull
 
+#ifdef MSDFGEN_USE_SKIA
+    #define TITLE_SUFFIX    " & Skia"
+    #define EXTRA_UNDERLINE "-------"
+#else
+    #define TITLE_SUFFIX
+    #define EXTRA_UNDERLINE
+#endif
+
 static const char * const helpText = R"(
-MSDF Atlas Generator by Viktor Chlumsky v)" MSDF_ATLAS_VERSION R"( (with MSDFGEN v)" MSDFGEN_VERSION R"()
-----------------------------------------------------------------
+MSDF Atlas Generator by Viktor Chlumsky v)" MSDF_ATLAS_VERSION R"( (with MSDFGEN v)" MSDFGEN_VERSION TITLE_SUFFIX R"()
+----------------------------------------------------------------)" EXTRA_UNDERLINE R"(
 
 INPUT SPECIFICATION
   -font <filename.ttf/otf>
@@ -76,13 +84,27 @@ DISTANCE FIELD GENERATOR SETTINGS
   -errorcorrection <threshold>
       Changes the threshold used to detect and correct potential artifacts. 0 disables error correction. (msdf / mtsdf only)
   -miterlimit <value>
-      Sets the miter limit that limits the extension of each glyph's bounding box due to very sharp corners. (psdf / msdf / mtsdf only)
+      Sets the miter limit that limits the extension of each glyph's bounding box due to very sharp corners. (psdf / msdf / mtsdf only))"
+#ifdef MSDFGEN_USE_SKIA
+R"(
+  -overlap
+      Switches to distance field generator with support for overlapping contours.
+  -nopreprocess
+      Disables path preprocessing which resolves self-intersections and overlapping contours.
+  -scanline
+      Performs an additional scanline pass to fix the signs of the distances.)"
+#else
+R"(
   -nooverlap
       Disables resolution of overlapping contours.
   -noscanline
-      Disables the scanline pass, which corrects the distance field's signs according to the non-zero fill rule.
+      Disables the scanline pass, which corrects the distance field's signs according to the non-zero fill rule.)"
+#endif
+R"(
   -seed <N>
       Sets the initial seed for the edge coloring heuristic.
+  -threads <N>
+      Sets the number of threads for the parallel computation. (0 = auto)
 )";
 
 static char toupper(char c) {
@@ -123,12 +145,12 @@ static bool cmpExtension(const char *path, const char *ext) {
     return true;
 }
 
-static void loadGlyphs(std::vector<GlyphGeometry> &glyphs, msdfgen::FontHandle *font, const Charset &charset) {
+static void loadGlyphs(std::vector<GlyphGeometry> &glyphs, msdfgen::FontHandle *font, const Charset &charset, bool preprocessGeometry) {
     glyphs.clear();
     glyphs.reserve(charset.size());
     for (unicode_t cp : charset) {
         GlyphGeometry glyph;
-        if (glyph.load(font, cp))
+        if (glyph.load(font, cp, preprocessGeometry))
             glyphs.push_back((GlyphGeometry &&) glyph);
         else
             printf("Glyph for codepoint 0x%X missing\n", cp);
@@ -145,6 +167,7 @@ struct Configuration {
     double miterLimit;
     unsigned long long coloringSeed;
     GeneratorAttributes generatorAttributes;
+    bool preprocessGeometry;
     int threadCount;
     const char *arteryFontFilename;
     const char *imageFilename;
@@ -196,8 +219,15 @@ int main(int argc, const char * const *argv) {
     config.imageFormat = ImageFormat::UNSPECIFIED;
     const char *imageFormatName = nullptr;
     int fixedWidth = -1, fixedHeight = -1;
-    config.generatorAttributes.overlapSupport = true;
-    config.generatorAttributes.scanlinePass = true;
+    config.preprocessGeometry = (
+        #ifdef MSDFGEN_USE_SKIA
+            true
+        #else
+            false
+        #endif
+    );
+    config.generatorAttributes.overlapSupport = !config.preprocessGeometry;
+    config.generatorAttributes.scanlinePass = !config.preprocessGeometry;
     config.generatorAttributes.errorCorrectionThreshold = MSDFGEN_DEFAULT_ERROR_CORRECTION_THRESHOLD;
     double minEmSize = 0;
     enum {
@@ -210,7 +240,7 @@ int main(int argc, const char * const *argv) {
     TightAtlasPacker::DimensionsConstraint atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
     config.angleThreshold = DEFAULT_ANGLE_THRESHOLD;
     config.miterLimit = DEFAULT_MITER_LIMIT;
-    config.threadCount = std::max((int) std::thread::hardware_concurrency(), 1);
+    config.threadCount = 0;
 
     // Parse command line
     int argPos = 1;
@@ -394,8 +424,23 @@ int main(int argc, const char * const *argv) {
             ++argPos;
             continue;
         }
+        ARG_CASE("-nopreprocess", 0) {
+            config.preprocessGeometry = false;
+            argPos += 1;
+            continue;
+        }
+        ARG_CASE("-preprocess", 0) {
+            config.preprocessGeometry = true;
+            argPos += 1;
+            continue;
+        }
         ARG_CASE("-nooverlap", 0) {
             config.generatorAttributes.overlapSupport = false;
+            argPos += 1;
+            continue;
+        }
+        ARG_CASE("-overlap", 0) {
+            config.generatorAttributes.overlapSupport = true;
             argPos += 1;
             continue;
         }
@@ -412,6 +457,14 @@ int main(int argc, const char * const *argv) {
         ARG_CASE("-seed", 1) {
             if (!parseUnsignedLL(config.coloringSeed, argv[argPos+1]))
                 ABORT("Invalid seed. Use -seed <N> with N being a non-negative integer.");
+            argPos += 2;
+            continue;
+        }
+        ARG_CASE("-threads", 1) {
+            unsigned tc;
+            if (!parseUnsigned(tc, argv[argPos+1]) || (int) tc < 0)
+                ABORT("Invalid thread count. Use -threads <N> with N being a non-negative integer.");
+            config.threadCount = (int) tc;
             argPos += 2;
             continue;
         }
@@ -462,6 +515,8 @@ int main(int argc, const char * const *argv) {
         rangeMode = RANGE_PIXEL;
         rangeValue = DEFAULT_PIXEL_RANGE;
     }
+    if (config.threadCount <= 0)
+        config.threadCount = std::max((int) std::thread::hardware_concurrency(), 1);
 
     // Finalize image format
     ImageFormat imageExtension = ImageFormat::UNSPECIFIED;
@@ -547,7 +602,7 @@ int main(int argc, const char * const *argv) {
 
     // Load glyphs
     std::vector<GlyphGeometry> glyphs;
-    loadGlyphs(glyphs, font, charset);
+    loadGlyphs(glyphs, font, charset, config.preprocessGeometry);
     printf("Loaded geometry of %d out of %d characters.\n", (int) glyphs.size(), (int) charset.size());
 
     // Determine final atlas dimensions, scale and range, pack glyphs

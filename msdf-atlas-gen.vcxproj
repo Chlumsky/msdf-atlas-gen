@@ -161,12 +161,12 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>msdfgen\include;msdfgen\freetype\include;msdfgen;artery-font-format;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDF_ATLAS_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDFGEN_USE_SKIA;MSDF_ATLAS_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>freetype.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>msdfgen\freetype\win32;msdfgen\$(Configuration) Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freetype.lib;skia.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>msdfgen\freetype\win$(PlatformArchitecture);msdfgen\skia\win$(PlatformArchitecture)\$(Configuration);msdfgen\$(Configuration) Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Library|Win32'">
@@ -176,7 +176,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>msdfgen\include;msdfgen\freetype\include;msdfgen;artery-font-format;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDFGEN_USE_SKIA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -185,6 +185,7 @@
     </Link>
     <Lib>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>msdfgen\freetype\win$(PlatformArchitecture);msdfgen\skia\win$(PlatformArchitecture)\debug;msdfgen\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -194,12 +195,12 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>msdfgen\include;msdfgen\freetype\include;msdfgen;artery-font-format;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDF_ATLAS_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDFGEN_USE_SKIA;MSDF_ATLAS_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>freetype.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>msdfgen\freetype\win64;msdfgen\$(Platform)\$(Configuration) Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freetype.lib;skia.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>msdfgen\freetype\win$(PlatformArchitecture);msdfgen\skia\win$(PlatformArchitecture)\$(Configuration);msdfgen\$(Platform)\$(Configuration) Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Library|x64'">
@@ -209,13 +210,16 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>msdfgen\include;msdfgen\freetype\include;msdfgen;artery-font-format;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDFGEN_USE_SKIA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>freetype.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\msdfgen\freetype\win64;$(SolutionDir)$(Platform)\$(Configuration) Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>msdfgen\freetype\win$(PlatformArchitecture);msdfgen\skia\win$(PlatformArchitecture)\debug;msdfgen\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -226,14 +230,16 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>msdfgen\include;msdfgen\freetype\include;msdfgen;artery-font-format;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDF_ATLAS_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDFGEN_USE_SKIA;MSDF_ATLAS_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>freetype.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>msdfgen\freetype\win32;msdfgen\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freetype.lib;skia.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>msdfgen\freetype\win$(PlatformArchitecture);msdfgen\skia\win$(PlatformArchitecture)\$(Configuration);msdfgen\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Library|Win32'">
@@ -245,7 +251,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>msdfgen\include;msdfgen\freetype\include;msdfgen;artery-font-format;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDFGEN_USE_SKIA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -256,6 +262,7 @@
     </Link>
     <Lib>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>msdfgen\freetype\win$(PlatformArchitecture);msdfgen\skia\win$(PlatformArchitecture)\release;msdfgen\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -267,14 +274,16 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>msdfgen\include;msdfgen\freetype\include;msdfgen;artery-font-format;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDF_ATLAS_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDFGEN_USE_SKIA;MSDF_ATLAS_STANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>freetype.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>msdfgen\freetype\win64;msdfgen\$(Platform)\$(Configuration) Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freetype.lib;skia.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>msdfgen\freetype\win$(PlatformArchitecture);msdfgen\skia\win$(PlatformArchitecture)\$(Configuration);msdfgen\$(Platform)\$(Configuration) Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Library|x64'">
@@ -286,7 +295,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>msdfgen\include;msdfgen\freetype\include;msdfgen;artery-font-format;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MSDFGEN_USE_CPP11;MSDFGEN_USE_SKIA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -295,6 +304,9 @@
       <AdditionalDependencies>freetype.lib;msdfgen.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\msdfgen\freetype\win64;$(SolutionDir)$(Platform)\$(Configuration) Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>msdfgen\freetype\win$(PlatformArchitecture);msdfgen\skia\win$(PlatformArchitecture)\release;msdfgen\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="msdf-atlas-gen\artery-font-export.cpp" />
