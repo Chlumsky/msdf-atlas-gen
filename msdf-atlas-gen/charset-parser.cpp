@@ -96,7 +96,7 @@ static std::string combinePath(const char *basePath, const char *relPath) {
     return std::string(basePath, lastSlash+1)+relPath;
 }
 
-bool Charset::load(const char *filename) {
+bool Charset::load(const char *filename, bool disableCharLiterals) {
 
     if (FILE *f = fopen(filename, "rb")) {
 
@@ -125,7 +125,7 @@ bool Charset::load(const char *filename) {
                             goto FAIL;
                         switch (state) {
                             case CLEAR:
-                                if (cp > 0)
+                                if (cp >= 0)
                                     add((unicode_t) cp);
                                 state = TIGHT;
                                 break;
@@ -144,7 +144,7 @@ bool Charset::load(const char *filename) {
                     buffer.clear();
                     continue; // next character already read
                 case '\'': // single UTF-8 character
-                    if (!(state == CLEAR || state == RANGE_BRACKET || state == RANGE_SEPARATOR))
+                    if (!(state == CLEAR || state == RANGE_BRACKET || state == RANGE_SEPARATOR) || disableCharLiterals)
                         goto FAIL;
                     if (!readString(buffer, f, '\''))
                         goto FAIL;
@@ -173,7 +173,7 @@ bool Charset::load(const char *filename) {
                     buffer.clear();
                     break;
                 case '"': // string of UTF-8 characters
-                    if (state != CLEAR)
+                    if (state != CLEAR || disableCharLiterals)
                         goto FAIL;
                     if (!readString(buffer, f, '"'))
                         goto FAIL;

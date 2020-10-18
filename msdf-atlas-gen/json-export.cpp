@@ -21,7 +21,7 @@ static const char * imageTypeString(ImageType type) {
     return nullptr;
 }
 
-bool exportJSON(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, int atlasWidth, int atlasHeight, ImageType imageType, const char *filename) {
+bool exportJSON(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, GlyphIdentifierType glyphIdentifierType, double fontSize, double pxRange, int atlasWidth, int atlasHeight, ImageType imageType, const char *filename) {
     msdfgen::FontMetrics fontMetrics;
     if (!msdfgen::getFontMetrics(fontMetrics, font))
         return false;
@@ -56,7 +56,14 @@ bool exportJSON(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyp
     fputs("\"glyphs\":[", f);
     for (int i = 0; i < glyphCount; ++i) {
         fputs(i == 0 ? "{" : ",{", f);
-        fprintf(f, "\"unicode\":%u,", glyphs[i].getCodepoint());
+        switch (glyphIdentifierType) {
+            case GlyphIdentifierType::GLYPH_INDEX:
+                fprintf(f, "\"index\":%d,", glyphs[i].getIndex());
+                break;
+            case GlyphIdentifierType::UNICODE_CODEPOINT:
+                fprintf(f, "\"unicode\":%u,", glyphs[i].getCodepoint());
+                break;
+        }
         fprintf(f, "\"advance\":%.17g", fsScale*glyphs[i].getAdvance());
         double l, b, r, t;
         glyphs[i].getQuadPlaneBounds(l, b, r, t);

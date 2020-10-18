@@ -37,4 +37,10 @@ enum class ImageFormat {
     BINARY_FLOAT_BE
 };
 
+/// Glyph identification
+enum class GlyphIdentifierType {
+    GLYPH_INDEX,
+    UNICODE_CODEPOINT
+};
+
 }

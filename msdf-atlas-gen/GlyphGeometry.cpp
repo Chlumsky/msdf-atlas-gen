@@ -6,11 +6,12 @@
 
 namespace msdf_atlas {
 
-GlyphGeometry::GlyphGeometry() : codepoint(), bounds(), advance(), box() { }
+GlyphGeometry::GlyphGeometry() : index(), codepoint(), bounds(), advance(), box() { }
 
-bool GlyphGeometry::load(msdfgen::FontHandle *font, unicode_t codepoint, bool preprocessGeometry) {
-    if (font && msdfgen::loadGlyph(shape, font, codepoint, &advance) && shape.validate()) {
-        this->codepoint = codepoint;
+bool GlyphGeometry::load(msdfgen::FontHandle *font, msdfgen::GlyphIndex index, bool preprocessGeometry) {
+    if (font && msdfgen::loadGlyph(shape, font, index, &advance) && shape.validate()) {
+        this->index = index.getIndex();
+        codepoint = 0;
         #ifdef MSDFGEN_USE_SKIA
             if (preprocessGeometry)
                 msdfgen::resolveShapeGeometry(shape);
@@ -29,6 +30,17 @@ bool GlyphGeometry::load(msdfgen::FontHandle *font, unicode_t codepoint, bool pr
             }
         }
         return true;
+    }
+    return false;
+}
+
+bool GlyphGeometry::load(msdfgen::FontHandle *font, unicode_t codepoint, bool preprocessGeometry) {
+    msdfgen::GlyphIndex index;
+    if (msdfgen::getGlyphIndex(index, font, codepoint)) {
+        if (load(font, index, preprocessGeometry)) {
+            this->codepoint = codepoint;
+            return true;
+        }
     }
     return false;
 }
@@ -62,8 +74,26 @@ void GlyphGeometry::placeBox(int x, int y) {
     box.rect.x = x, box.rect.y = y;
 }
 
+int GlyphGeometry::getIndex() const {
+    return index;
+}
+
+msdfgen::GlyphIndex GlyphGeometry::getGlyphIndex() const {
+    return msdfgen::GlyphIndex(index);
+}
+
 unicode_t GlyphGeometry::getCodepoint() const {
     return codepoint;
+}
+
+int GlyphGeometry::getIdentifier(GlyphIdentifierType type) const {
+    switch (type) {
+        case GlyphIdentifierType::GLYPH_INDEX:
+            return index;
+        case GlyphIdentifierType::UNICODE_CODEPOINT:
+            return (int) codepoint;
+    }
+    return 0;
 }
 
 const msdfgen::Shape & GlyphGeometry::getShape() const {
@@ -121,7 +151,7 @@ bool GlyphGeometry::isWhitespace() const {
 
 GlyphGeometry::operator GlyphBox() const {
     GlyphBox box;
-    box.codepoint = codepoint;
+    box.index = index;
     box.advance = advance;
     getQuadPlaneBounds(box.bounds.l, box.bounds.b, box.bounds.r, box.bounds.t);
     box.rect.x = this->box.rect.x, box.rect.y = this->box.rect.y, box.rect.w = this->box.rect.w, box.rect.h = this->box.rect.h;

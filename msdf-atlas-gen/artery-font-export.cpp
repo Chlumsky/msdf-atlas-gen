@@ -24,6 +24,16 @@ static artery_font::ImageType convertImageType(ImageType imageType) {
     return artery_font::IMAGE_NONE;
 }
 
+static artery_font::CodepointType convertCodepointType(GlyphIdentifierType glyphIdentifierType) {
+    switch (glyphIdentifierType) {
+        case GlyphIdentifierType::GLYPH_INDEX:
+            return artery_font::CP_INDEXED;
+        case GlyphIdentifierType::UNICODE_CODEPOINT:
+            return artery_font::CP_UNICODE;
+    }
+    return artery_font::CP_UNSPECIFIED;
+}
+
 template <typename T, int N>
 static bool encodeTiff(std::vector<byte> &output, const msdfgen::BitmapConstRef<T, N> &atlas) {
     // TODO
@@ -43,7 +53,7 @@ artery_font::PixelFormat getPixelFormat<float>() {
 }
 
 template <typename REAL, typename T, int N>
-bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, const msdfgen::BitmapConstRef<T, N> &atlas, ImageType imageType, ImageFormat imageFormat, const char *filename) {
+bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<T, N> &atlas, const char *filename, const ArteryFontExportProperties &properties) {
     artery_font::StdArteryFont<REAL> arfont = { };
     arfont.metadataFormat = artery_font::METADATA_NONE;
 
@@ -53,11 +63,11 @@ bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, in
             return false;
         double fsScale = 1/fontMetrics.emSize;
         artery_font::StdFontVariant<REAL> fontVariant = { };
-        fontVariant.codepointType = artery_font::CP_UNICODE;
-        fontVariant.imageType = convertImageType(imageType);
-        fontVariant.metrics.fontSize = REAL(fontSize);
-        if (imageType != ImageType::HARD_MASK)
-            fontVariant.metrics.distanceRange = REAL(pxRange);
+        fontVariant.codepointType = convertCodepointType(properties.glyphIdentifierType);
+        fontVariant.imageType = convertImageType(properties.imageType);
+        fontVariant.metrics.fontSize = REAL(properties.fontSize);
+        if (properties.imageType != ImageType::HARD_MASK)
+            fontVariant.metrics.distanceRange = REAL(properties.pxRange);
         fontVariant.metrics.emSize = REAL(fsScale*fontMetrics.emSize);
         fontVariant.metrics.ascender = REAL(fsScale*fontMetrics.ascenderY);
         fontVariant.metrics.descender = REAL(fsScale*fontMetrics.descenderY);
@@ -67,7 +77,7 @@ bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, in
         fontVariant.glyphs = artery_font::StdList<artery_font::Glyph<REAL> >(glyphCount);
         for (int i = 0; i < glyphCount; ++i) {
             artery_font::Glyph<REAL> &glyph = fontVariant.glyphs[i];
-            glyph.codepoint = glyphs[i].getCodepoint();
+            glyph.codepoint = glyphs[i].getIdentifier(properties.glyphIdentifierType);
             glyph.image = 0;
             double l, b, r, t;
             glyphs[i].getQuadPlaneBounds(l, b, r, t);
@@ -84,10 +94,10 @@ bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, in
             glyph.advance.v = REAL(0);
             for (int j = 0; j < glyphCount; ++j) {
                 double kerning;
-                if (msdfgen::getKerning(kerning, font, glyphs[i].getCodepoint(), glyphs[j].getCodepoint()) && kerning) {
+                if (msdfgen::getKerning(kerning, font, glyphs[i].getGlyphIndex(), glyphs[j].getGlyphIndex()) && kerning) {
                     artery_font::KernPair<REAL> kernPair = { };
-                    kernPair.codepoint1 = glyphs[i].getCodepoint();
-                    kernPair.codepoint2 = glyphs[j].getCodepoint();
+                    kernPair.codepoint1 = glyphs[i].getIdentifier(properties.glyphIdentifierType);
+                    kernPair.codepoint2 = glyphs[j].getIdentifier(properties.glyphIdentifierType);
                     kernPair.advance.h = REAL(fsScale*kerning);
                     fontVariant.kernPairs.vector.push_back((artery_font::KernPair<REAL> &&) kernPair);
                 }
@@ -101,8 +111,8 @@ bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, in
         image.width = atlas.width;
         image.height = atlas.height;
         image.channels = N;
-        image.imageType = convertImageType(imageType);
-        switch (imageFormat) {
+        image.imageType = convertImageType(properties.imageType);
+        switch (properties.imageFormat) {
             case ImageFormat::PNG:
                 image.encoding = artery_font::IMAGE_PNG;
                 image.pixelFormat = artery_font::PIXEL_UNSIGNED8;
@@ -139,11 +149,11 @@ bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, in
     return artery_font::writeFile(arfont, filename);
 }
 
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, const msdfgen::BitmapConstRef<byte, 1> &atlas, ImageType imageType, ImageFormat imageFormat, const char *filename);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, const msdfgen::BitmapConstRef<byte, 3> &atlas, ImageType imageType, ImageFormat imageFormat, const char *filename);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, const msdfgen::BitmapConstRef<byte, 4> &atlas, ImageType imageType, ImageFormat imageFormat, const char *filename);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, const msdfgen::BitmapConstRef<float, 1> &atlas, ImageType imageType, ImageFormat imageFormat, const char *filename);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, const msdfgen::BitmapConstRef<float, 3> &atlas, ImageType imageType, ImageFormat imageFormat, const char *filename);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, const msdfgen::BitmapConstRef<float, 4> &atlas, ImageType imageType, ImageFormat imageFormat, const char *filename);
+template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<byte, 1> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<byte, 3> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<byte, 4> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<float, 1> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<float, 3> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<float, 4> &atlas, const char *filename, const ArteryFontExportProperties &properties);
 
 }

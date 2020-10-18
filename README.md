@@ -3,19 +3,17 @@
 
 This is a utility for generating compact font atlases using [MSDFgen](https://github.com/Chlumsky/msdfgen).
 
-It can read TTF and OTF font files, select a subset of characters, generate distance fields or bitmaps for each, and tightly pack them into an atlas bitmap, which can be e.g. used as a texture in video games. The atlas can be exported as an image file or an [Artery Font](https://github.com/Chlumsky/artery-font-format) file, and its layout written into a CSV or structured JSON file.
+The atlas generator loads a subset of glyphs from a TTF or OTF font file, generates a distance field for each of them, and tightly packs them into an atlas bitmap (example below). The finished atlas and/or its layout metadata can be exported as an [Artery Font](https://github.com/Chlumsky/artery-font-format) file, a plain image file, a CSV sheet or a structured JSON file.
 
 ![Atlas example](https://user-images.githubusercontent.com/18639794/76163889-811f2e80-614a-11ea-9b28-1eed54dbb899.png)
 
-## Getting started
+A font atlas is typically stored in texture memory and used to draw text in real-time rendering contexts such as video games.
 
-This project can be used either as a library or as a console program.
-To start using the program immediately, there is a Windows binary available for download in the ["Releases" section](https://github.com/Chlumsky/msdf-atlas-gen/releases).
-To build the project, you may use the included [Visual Studio solution](msdf-atlas-gen.sln) or the [Unix Makefile](Makefile).
+- See what's new in the [changelog](CHANGELOG.md).
 
 ## Atlas types
 
-The utility can generate the atlas bitmap in the following six ways:
+The atlas generator can generate the following six types of atlases.
 
 | |Hard mask|Soft mask|SDF|PSDF|MSDF|MTSDF|
 |-|-|-|-|-|-|-|
@@ -32,12 +30,21 @@ Notes:
 - *Soft effects* refers to the support of effects that use true distance, such as glows, rounded borders, or simplified shadows.
 - *Hard effects* refers to the support of effects that use pseudo-distance, such as mitered borders or thickness adjustment.
 
+## Getting started
+
+This project can be used either as a library or as a standalone console program.
+To start using the program immediately, there is a Windows binary available for download in the ["Releases" section](https://github.com/Chlumsky/msdf-atlas-gen/releases).
+To build the project, you may use the included [Visual Studio solution](msdf-atlas-gen.sln) or the [Unix Makefile](Makefile).
+
 ## Command line arguments
+
+Use the following command line arguments for the standalone version of the atlas generator.
 
 ### Input
 
 - `-font <fontfile.ttf/otf>` &ndash; sets the input font file.
 - `-charset <charset.txt>` &ndash; sets the character set. The ASCII charset will be used if not specified. See [the syntax specification](#character-set-specification-syntax) of `charset.txt`.
+- `-glyphset <glyphset.txt>` &ndash; sets the set of input glyphs using their indices within the font file. See [the syntax specification](#glyph-set-specification).
 
 ### Bitmap atlas type
 
@@ -123,3 +130,7 @@ Additionally, the include directive can be used to include other charset files a
 It must be written on a separate line:
 
 `@include "base-charset.txt"`
+
+### Glyph set specification
+
+The syntax of the glyph set specification is mostly the same as that of a character set, but only numeric values (decimal and hexadecimal) are allowed.

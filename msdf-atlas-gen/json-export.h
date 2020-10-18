@@ -9,6 +9,6 @@
 namespace msdf_atlas {
 
 /// Writes the font and glyph metrics and atlas layout data into a comprehensive JSON file
-bool exportJSON(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, int atlasWidth, int atlasHeight, ImageType imageType, const char *filename);
+bool exportJSON(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, GlyphIdentifierType glyphIdentifierType, double fontSize, double pxRange, int atlasWidth, int atlasHeight, ImageType imageType, const char *filename);
 
 }

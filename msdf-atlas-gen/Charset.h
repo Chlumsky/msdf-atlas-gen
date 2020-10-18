@@ -25,7 +25,7 @@ public:
     std::set<unicode_t>::const_iterator end() const;
 
     /// Load character set from a text file with the correct syntax
-    bool load(const char *filename);
+    bool load(const char *filename, bool disableCharLiterals = false);
 
 private:
     std::set<unicode_t> codepoints;

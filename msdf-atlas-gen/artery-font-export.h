@@ -8,8 +8,16 @@
 
 namespace msdf_atlas {
 
+struct ArteryFontExportProperties {
+    GlyphIdentifierType glyphIdentifierType;
+    double fontSize;
+    double pxRange;
+    ImageType imageType;
+    ImageFormat imageFormat;
+};
+
 /// Encodes the atlas bitmap and its layout into an Artery Atlas Font file
 template <typename REAL, typename T, int N>
-bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, double fontSize, double pxRange, const msdfgen::BitmapConstRef<T, N> &atlas, ImageType imageType, ImageFormat imageFormat, const char *filename);
+bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<T, N> &atlas, const char *filename, const ArteryFontExportProperties &properties);
 
 }

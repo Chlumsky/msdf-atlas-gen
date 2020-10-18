@@ -5,7 +5,7 @@
 
 namespace msdf_atlas {
 
-bool exportCSV(const GlyphGeometry *glyphs, int glyphCount, double emSize, const char *filename) {
+bool exportCSV(const GlyphGeometry *glyphs, int glyphCount, GlyphIdentifierType glyphIdentifierType, double emSize, const char *filename) {
     FILE *f = fopen(filename, "w");
     if (!f)
         return false;
@@ -13,7 +13,7 @@ bool exportCSV(const GlyphGeometry *glyphs, int glyphCount, double emSize, const
     double fsScale = 1/emSize;
     for (int i = 0; i < glyphCount; ++i) {
         double l, b, r, t;
-        fprintf(f, "%u,%.17g,", glyphs[i].getCodepoint(), fsScale*glyphs[i].getAdvance());
+        fprintf(f, "%d,%.17g,", glyphs[i].getIdentifier(glyphIdentifierType), fsScale*glyphs[i].getAdvance());
         glyphs[i].getQuadPlaneBounds(l, b, r, t);
         fprintf(f, "%.17g,%.17g,%.17g,%.17g,", fsScale*l, fsScale*b, fsScale*r, fsScale*t);
         glyphs[i].getQuadAtlasBounds(l, b, r, t);

@@ -44,6 +44,8 @@ INPUT SPECIFICATION
       Specifies the input TrueType / OpenType font file. This is required.
   -charset <filename>
       Specifies the input character set. Refer to the documentation for format of charset specification. Defaults to ASCII.
+  -glyphset <filename>
+      Specifies the set of input glyphs as glyph indices within the font file.
 
 ATLAS CONFIGURATION
   -type <hardmask / softmask / sdf / psdf / msdf / mtsdf>
@@ -145,7 +147,19 @@ static bool cmpExtension(const char *path, const char *ext) {
     return true;
 }
 
-static void loadGlyphs(std::vector<GlyphGeometry> &glyphs, msdfgen::FontHandle *font, const Charset &charset, bool preprocessGeometry) {
+static void loadGlyphsByIndex(std::vector<GlyphGeometry> &glyphs, msdfgen::FontHandle *font, const Charset &charset, bool preprocessGeometry) {
+    glyphs.clear();
+    glyphs.reserve(charset.size());
+    for (unicode_t cp : charset) {
+        GlyphGeometry glyph;
+        if (glyph.load(font, msdfgen::GlyphIndex(cp), preprocessGeometry))
+            glyphs.push_back((GlyphGeometry &&) glyph);
+        else
+            printf("Glyph # 0x%X missing\n", cp);
+    }
+}
+
+static void loadGlyphsByUnicode(std::vector<GlyphGeometry> &glyphs, msdfgen::FontHandle *font, const Charset &charset, bool preprocessGeometry) {
     glyphs.clear();
     glyphs.reserve(charset.size());
     for (unicode_t cp : charset) {
@@ -158,6 +172,7 @@ static void loadGlyphs(std::vector<GlyphGeometry> &glyphs, msdfgen::FontHandle *
 }
 
 struct Configuration {
+    GlyphIdentifierType glyphIdentifierType;
     ImageType imageType;
     ImageFormat imageFormat;
     int width, height;
@@ -197,7 +212,13 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, msdfgen::FontHan
     }
 
     if (config.arteryFontFilename) {
-        if (exportArteryFont<float>(font, glyphs.data(), glyphs.size(), config.emSize, config.pxRange, bitmap, config.imageType, config.imageFormat, config.arteryFontFilename))
+        ArteryFontExportProperties arfontProps;
+        arfontProps.glyphIdentifierType = config.glyphIdentifierType;
+        arfontProps.fontSize = config.emSize;
+        arfontProps.pxRange = config.pxRange;
+        arfontProps.imageType = config.imageType;
+        arfontProps.imageFormat = config.imageFormat;
+        if (exportArteryFont<float>(font, glyphs.data(), glyphs.size(), bitmap, config.arteryFontFilename, arfontProps))
             puts("Artery Font file generated.");
         else {
             success = false;
@@ -215,6 +236,7 @@ int main(int argc, const char * const *argv) {
     Configuration config = { };
     const char *fontFilename = nullptr;
     const char *charsetFilename = nullptr;
+    config.glyphIdentifierType = GlyphIdentifierType::UNICODE_CODEPOINT;
     config.imageType = ImageType::MSDF;
     config.imageFormat = ImageFormat::UNSPECIFIED;
     const char *imageFormatName = nullptr;
@@ -299,6 +321,13 @@ int main(int argc, const char * const *argv) {
         }
         ARG_CASE("-charset", 1) {
             charsetFilename = argv[++argPos];
+            config.glyphIdentifierType = GlyphIdentifierType::UNICODE_CODEPOINT;
+            ++argPos;
+            continue;
+        }
+        ARG_CASE("-glyphset", 1) {
+            charsetFilename = argv[++argPos];
+            config.glyphIdentifierType = GlyphIdentifierType::GLYPH_INDEX;
             ++argPos;
             continue;
         }
@@ -593,17 +622,24 @@ int main(int argc, const char * const *argv) {
     // Load character set
     Charset charset;
     if (charsetFilename) {
-        if (!charset.load(charsetFilename))
-            ABORT("Failed to load character set specification.");
+        if (!charset.load(charsetFilename, config.glyphIdentifierType != GlyphIdentifierType::UNICODE_CODEPOINT))
+            ABORT(config.glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX ? "Failed to load glyph set specification." : "Failed to load character set specification.");
     } else
         charset = Charset::ASCII;
-    if (charset.empty())
-        ABORT("No character set loaded.");
 
     // Load glyphs
     std::vector<GlyphGeometry> glyphs;
-    loadGlyphs(glyphs, font, charset, config.preprocessGeometry);
-    printf("Loaded geometry of %d out of %d characters.\n", (int) glyphs.size(), (int) charset.size());
+    switch (config.glyphIdentifierType) {
+        case GlyphIdentifierType::GLYPH_INDEX:
+            loadGlyphsByIndex(glyphs, font, charset, config.preprocessGeometry);
+            break;
+        case GlyphIdentifierType::UNICODE_CODEPOINT:
+            loadGlyphsByUnicode(glyphs, font, charset, config.preprocessGeometry);
+            break;
+    }
+    if (glyphs.empty())
+        ABORT("No glyphs loaded.");
+    printf("Loaded geometry of %d out of %d %s.\n", (int) glyphs.size(), (int) charset.size(), config.glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX ? "glyphs" : "characters");
 
     // Determine final atlas dimensions, scale and range, pack glyphs
     {
@@ -709,7 +745,7 @@ int main(int argc, const char * const *argv) {
     }
 
     if (config.csvFilename) {
-        if (exportCSV(glyphs.data(), glyphs.size(), fontMetrics.emSize, config.csvFilename))
+        if (exportCSV(glyphs.data(), glyphs.size(), config.glyphIdentifierType, fontMetrics.emSize, config.csvFilename))
             puts("Glyph layout written into CSV file.");
         else {
             result = 1;
@@ -717,7 +753,7 @@ int main(int argc, const char * const *argv) {
         }
     }
     if (config.jsonFilename) {
-        if (exportJSON(font, glyphs.data(), glyphs.size(), config.emSize, config.pxRange, config.width, config.height, config.imageType, config.jsonFilename))
+        if (exportJSON(font, glyphs.data(), glyphs.size(), config.glyphIdentifierType, config.emSize, config.pxRange, config.width, config.height, config.imageType, config.jsonFilename))
             puts("Glyph layout and metadata written into JSON file.");
         else {
             result = 1;
@@ -726,14 +762,19 @@ int main(int argc, const char * const *argv) {
     }
 
     if (config.shadronPreviewFilename && config.shadronPreviewText) {
-        std::vector<unicode_t> previewText;
-        utf8Decode(previewText, config.shadronPreviewText);
-        previewText.push_back(0);
-        if (generateShadronPreview(font, glyphs.data(), glyphs.size(), config.imageType, config.width, config.height, config.pxRange, previewText.data(), config.imageFilename, config.shadronPreviewFilename))
-            puts("Shadron preview script generated.");
-        else {
+        if (config.glyphIdentifierType == GlyphIdentifierType::UNICODE_CODEPOINT) {
+            std::vector<unicode_t> previewText;
+            utf8Decode(previewText, config.shadronPreviewText);
+            previewText.push_back(0);
+            if (generateShadronPreview(font, glyphs.data(), glyphs.size(), config.imageType, config.width, config.height, config.pxRange, previewText.data(), config.imageFilename, config.shadronPreviewFilename))
+                puts("Shadron preview script generated.");
+            else {
+                result = 1;
+                puts("Failed to generate Shadron preview file.");
+            }
+        } else {
             result = 1;
-            puts("Failed to generate Shadron preview file.");
+            puts("Shadron preview not supported in -glyphset mode.");
         }
     }
 

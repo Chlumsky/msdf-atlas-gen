@@ -1,13 +1,11 @@
 
 #pragma once
 
-#include "types.h"
-
 namespace msdf_atlas {
 
 /// The glyph box - its bounds in plane and atlas
 struct GlyphBox {
-    unicode_t codepoint;
+    int index;
     double advance;
     struct {
         double l, b, r, t;
