@@ -591,6 +591,12 @@ int main(int argc, const char * const *argv) {
             printf("Warning: Output image file extension does not match the image's actual format (%s)!\n", imageFormatName);
     }
     imageFormatName = nullptr; // No longer consistent with imageFormat
+    bool floatingPointFormat = (
+        config.imageFormat == ImageFormat::TIFF ||
+        config.imageFormat == ImageFormat::TEXT_FLOAT ||
+        config.imageFormat == ImageFormat::BINARY_FLOAT ||
+        config.imageFormat == ImageFormat::BINARY_FLOAT_BE
+    );
 
     // Load font
     class FontHolder {
@@ -699,42 +705,35 @@ int main(int argc, const char * const *argv) {
             }
         }
 
-        bool floatingPoint = (
-            config.imageFormat == ImageFormat::TIFF ||
-            config.imageFormat == ImageFormat::TEXT_FLOAT ||
-            config.imageFormat == ImageFormat::BINARY_FLOAT ||
-            config.imageFormat == ImageFormat::BINARY_FLOAT_BE
-        );
-
         bool success = false;
         switch (config.imageType) {
             case ImageType::HARD_MASK:
-                if (floatingPoint)
+                if (floatingPointFormat)
                     success = makeAtlas<float, float, 1, scanlineGenerator>(glyphs, font, config);
                 else
                     success = makeAtlas<byte, float, 1, scanlineGenerator>(glyphs, font, config);
                 break;
             case ImageType::SOFT_MASK:
             case ImageType::SDF:
-                if (floatingPoint)
+                if (floatingPointFormat)
                     success = makeAtlas<float, float, 1, sdfGenerator>(glyphs, font, config);
                 else
                     success = makeAtlas<byte, float, 1, sdfGenerator>(glyphs, font, config);
                 break;
             case ImageType::PSDF:
-                if (floatingPoint)
+                if (floatingPointFormat)
                     success = makeAtlas<float, float, 1, psdfGenerator>(glyphs, font, config);
                 else
                     success = makeAtlas<byte, float, 1, psdfGenerator>(glyphs, font, config);
                 break;
             case ImageType::MSDF:
-                if (floatingPoint)
+                if (floatingPointFormat)
                     success = makeAtlas<float, float, 3, msdfGenerator>(glyphs, font, config);
                 else
                     success = makeAtlas<byte, float, 3, msdfGenerator>(glyphs, font, config);
                 break;
             case ImageType::MTSDF:
-                if (floatingPoint)
+                if (floatingPointFormat)
                     success = makeAtlas<float, float, 4, mtsdfGenerator>(glyphs, font, config);
                 else
                     success = makeAtlas<byte, float, 4, mtsdfGenerator>(glyphs, font, config);
@@ -766,7 +765,7 @@ int main(int argc, const char * const *argv) {
             std::vector<unicode_t> previewText;
             utf8Decode(previewText, config.shadronPreviewText);
             previewText.push_back(0);
-            if (generateShadronPreview(font, glyphs.data(), glyphs.size(), config.imageType, config.width, config.height, config.pxRange, previewText.data(), config.imageFilename, config.shadronPreviewFilename))
+            if (generateShadronPreview(font, glyphs.data(), glyphs.size(), config.imageType, config.width, config.height, config.pxRange, previewText.data(), config.imageFilename, floatingPointFormat, config.shadronPreviewFilename))
                 puts("Shadron preview script generated.");
             else {
                 result = 1;

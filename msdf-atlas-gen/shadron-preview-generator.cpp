@@ -77,7 +77,7 @@ static std::string relativizePath(const char *base, const char *target) {
     return output;
 }
 
-bool generateShadronPreview(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, ImageType atlasType, int atlasWidth, int atlasHeight, double pxRange, const unicode_t *text, const char *imageFilename, const char *outputFilename) {
+bool generateShadronPreview(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, ImageType atlasType, int atlasWidth, int atlasHeight, double pxRange, const unicode_t *text, const char *imageFilename, bool fullRange, const char *outputFilename) {
     double texelWidth = 1./atlasWidth;
     double texelHeight = 1./atlasHeight;
     FILE *file = fopen(outputFilename, "w");
@@ -88,7 +88,7 @@ bool generateShadronPreview(msdfgen::FontHandle *font, const GlyphGeometry *glyp
         fprintf(file, "image Atlas = file(\"%s\")", relativizePath(outputFilename, imageFilename).c_str());
     else
         fprintf(file, "image Atlas = file()");
-    fprintf(file, " : filter(%s), map(repeat);\n", atlasType == ImageType::HARD_MASK ? "nearest" : "linear");
+    fprintf(file, " : %sfilter(%s), map(repeat);\n", fullRange ? "full_range(true), " : "", atlasType == ImageType::HARD_MASK ? "nearest" : "linear");
     fprintf(file, "const vec2 txRange = vec2(%.9g, %.9g);\n\n", pxRange*texelWidth, pxRange*texelHeight);
     {
         msdfgen::FontMetrics fontMetrics;
