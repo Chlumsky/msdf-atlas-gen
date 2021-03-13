@@ -19,6 +19,7 @@
 #include "Charset.h"
 #include "GlyphBox.h"
 #include "GlyphGeometry.h"
+#include "FontGeometry.h"
 #include "RectanglePacker.h"
 #include "rectangle-packing.h"
 #include "Workload.h"

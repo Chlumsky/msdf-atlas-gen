@@ -314,6 +314,7 @@
     <ClCompile Include="msdf-atlas-gen\charset-parser.cpp" />
     <ClCompile Include="msdf-atlas-gen\Charset.cpp" />
     <ClCompile Include="msdf-atlas-gen\csv-export.cpp" />
+    <ClCompile Include="msdf-atlas-gen\FontGeometry.cpp" />
     <ClCompile Include="msdf-atlas-gen\glyph-generators.cpp" />
     <ClCompile Include="msdf-atlas-gen\GlyphGeometry.cpp" />
     <ClCompile Include="msdf-atlas-gen\image-encode.cpp" />
@@ -337,6 +338,7 @@
     <ClInclude Include="msdf-atlas-gen\csv-export.h" />
     <ClInclude Include="msdf-atlas-gen\DynamicAtlas.h" />
     <ClInclude Include="msdf-atlas-gen\DynamicAtlas.hpp" />
+    <ClInclude Include="msdf-atlas-gen\FontGeometry.h" />
     <ClInclude Include="msdf-atlas-gen\glyph-generators.h" />
     <ClInclude Include="msdf-atlas-gen\image-encode.h" />
     <ClInclude Include="msdf-atlas-gen\Charset.h" />

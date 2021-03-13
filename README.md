@@ -45,6 +45,8 @@ Use the following command line arguments for the standalone version of the atlas
 - `-font <fontfile.ttf/otf>` &ndash; sets the input font file.
 - `-charset <charset.txt>` &ndash; sets the character set. The ASCII charset will be used if not specified. See [the syntax specification](#character-set-specification-syntax) of `charset.txt`.
 - `-glyphset <glyphset.txt>` &ndash; sets the set of input glyphs using their indices within the font file. See [the syntax specification](#glyph-set-specification).
+- `-fontscale <scale>` &ndash; applies a scaling transformation to the font's glyphs. Mainly to be used to generate multiple sizes in a single atlas, otherwise use [`-size`](#glyph-configuration).
+- `-and` &ndash; separates multiple inputs to be combined into a single atlas.
 
 ### Bitmap atlas type
 

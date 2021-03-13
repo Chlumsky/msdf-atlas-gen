@@ -77,9 +77,12 @@ static std::string relativizePath(const char *base, const char *target) {
     return output;
 }
 
-bool generateShadronPreview(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, ImageType atlasType, int atlasWidth, int atlasHeight, double pxRange, const unicode_t *text, const char *imageFilename, bool fullRange, const char *outputFilename) {
+bool generateShadronPreview(const FontGeometry *fonts, int fontCount, ImageType atlasType, int atlasWidth, int atlasHeight, double pxRange, const unicode_t *text, const char *imageFilename, bool fullRange, const char *outputFilename) {
+    if (fontCount <= 0)
+        return false;
     double texelWidth = 1./atlasWidth;
     double texelHeight = 1./atlasHeight;
+    bool anyGlyphs = false;
     FILE *file = fopen(outputFilename, "w");
     if (!file)
         return false;
@@ -91,9 +94,12 @@ bool generateShadronPreview(msdfgen::FontHandle *font, const GlyphGeometry *glyp
     fprintf(file, " : %sfilter(%s), map(repeat);\n", fullRange ? "full_range(true), " : "", atlasType == ImageType::HARD_MASK ? "nearest" : "linear");
     fprintf(file, "const vec2 txRange = vec2(%.9g, %.9g);\n\n", pxRange*texelWidth, pxRange*texelHeight);
     {
-        msdfgen::FontMetrics fontMetrics;
-        if (!msdfgen::getFontMetrics(fontMetrics, font))
-            return false;
+        msdfgen::FontMetrics fontMetrics = fonts->getMetrics();
+        for (int i = 1; i < fontCount; ++i) {
+            fontMetrics.lineHeight = std::max(fontMetrics.lineHeight, fonts[i].getMetrics().lineHeight);
+            fontMetrics.ascenderY = std::max(fontMetrics.ascenderY, fonts[i].getMetrics().ascenderY);
+            fontMetrics.descenderY = std::min(fontMetrics.descenderY, fonts[i].getMetrics().descenderY);
+        }
         double fsScale = 1/(fontMetrics.ascenderY-fontMetrics.descenderY);
         fputs("vertex_list GlyphVertex textQuadVertices = {\n", file);
         double x = 0, y = -fsScale*fontMetrics.ascenderY;
@@ -107,13 +113,14 @@ bool generateShadronPreview(msdfgen::FontHandle *font, const GlyphGeometry *glyp
                 y -= fsScale*fontMetrics.lineHeight;
                 continue;
             }
-            for (int i = 0; i < glyphCount; ++i) {
-                if (glyphs[i].getCodepoint() == *cp) {
-                    if (!glyphs[i].isWhitespace()) {
+            for (int i = 0; i < fontCount; ++i) {
+                const GlyphGeometry *glyph = fonts[i].getGlyph(*cp);
+                if (glyph) {
+                    if (!glyph->isWhitespace()) {
                         double pl, pb, pr, pt;
                         double il, ib, ir, it;
-                        glyphs[i].getQuadPlaneBounds(pl, pb, pr, pt);
-                        glyphs[i].getQuadAtlasBounds(il, ib, ir, it);
+                        glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+                        glyph->getQuadAtlasBounds(il, ib, ir, it);
                         pl *= fsScale, pb *= fsScale, pr *= fsScale, pt *= fsScale;
                         pl += x, pb += y, pr += x, pt += y;
                         il *= texelWidth, ib *= texelHeight, ir *= texelWidth, it *= texelHeight;
@@ -126,10 +133,10 @@ bool generateShadronPreview(msdfgen::FontHandle *font, const GlyphGeometry *glyp
                             pr, pb, ir, ib
                         );
                     }
-                    x += fsScale*glyphs[i].getAdvance();
-                    double kerning;
-                    if (msdfgen::getKerning(kerning, font, cp[0], cp[1]))
-                        x += fsScale*kerning;
+                    double advance = glyph->getAdvance();
+                    fonts[i].getAdvance(advance, cp[0], cp[1]);
+                    x += fsScale*advance;
+                    anyGlyphs = true;
                     break;
                 }
             }
@@ -142,7 +149,7 @@ bool generateShadronPreview(msdfgen::FontHandle *font, const GlyphGeometry *glyp
     fputs("PREVIEW_IMAGE(Preview, Atlas, txRange, vec3(1.0), textQuadVertices, textSize, ivec2(1200, 400));\n", file);
     fputs("export png(Preview, \"preview.png\");\n", file);
     fclose(file);
-    return true;
+    return anyGlyphs;
 }
 
 }

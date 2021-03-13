@@ -3,6 +3,7 @@
 
 #include <artery-font/std-artery-font.h>
 #include <artery-font/stdio-serialization.h>
+#include "GlyphGeometry.h"
 #include "image-encode.h"
 
 namespace msdf_atlas {
@@ -53,55 +54,69 @@ artery_font::PixelFormat getPixelFormat<float>() {
 }
 
 template <typename REAL, typename T, int N>
-bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<T, N> &atlas, const char *filename, const ArteryFontExportProperties &properties) {
+bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<T, N> &atlas, const char *filename, const ArteryFontExportProperties &properties) {
     artery_font::StdArteryFont<REAL> arfont = { };
     arfont.metadataFormat = artery_font::METADATA_NONE;
 
-    if (glyphCount > 0) {
-        msdfgen::FontMetrics fontMetrics;
-        if (!msdfgen::getFontMetrics(fontMetrics, font))
-            return false;
-        double fsScale = 1/fontMetrics.emSize;
+    for (int i = 0; i < fontCount; ++i) {
+        const FontGeometry &font = fonts[i];
+        GlyphIdentifierType identifierType = font.getPreferredIdentifierType();
+        const msdfgen::FontMetrics &fontMetrics = font.getMetrics();
         artery_font::StdFontVariant<REAL> fontVariant = { };
-        fontVariant.codepointType = convertCodepointType(properties.glyphIdentifierType);
+        fontVariant.codepointType = convertCodepointType(identifierType);
         fontVariant.imageType = convertImageType(properties.imageType);
-        fontVariant.metrics.fontSize = REAL(properties.fontSize);
+        fontVariant.metrics.fontSize = REAL(properties.fontSize*fontMetrics.emSize);
         if (properties.imageType != ImageType::HARD_MASK)
             fontVariant.metrics.distanceRange = REAL(properties.pxRange);
-        fontVariant.metrics.emSize = REAL(fsScale*fontMetrics.emSize);
-        fontVariant.metrics.ascender = REAL(fsScale*fontMetrics.ascenderY);
-        fontVariant.metrics.descender = REAL(fsScale*fontMetrics.descenderY);
-        fontVariant.metrics.lineHeight = REAL(fsScale*fontMetrics.lineHeight);
-        fontVariant.metrics.underlineY = REAL(fsScale*fontMetrics.underlineY);
-        fontVariant.metrics.underlineThickness = REAL(fsScale*fontMetrics.underlineThickness);
-        fontVariant.glyphs = artery_font::StdList<artery_font::Glyph<REAL> >(glyphCount);
-        for (int i = 0; i < glyphCount; ++i) {
-            artery_font::Glyph<REAL> &glyph = fontVariant.glyphs[i];
-            glyph.codepoint = glyphs[i].getIdentifier(properties.glyphIdentifierType);
+        fontVariant.metrics.emSize = REAL(fontMetrics.emSize);
+        fontVariant.metrics.ascender = REAL(fontMetrics.ascenderY);
+        fontVariant.metrics.descender = REAL(fontMetrics.descenderY);
+        fontVariant.metrics.lineHeight = REAL(fontMetrics.lineHeight);
+        fontVariant.metrics.underlineY = REAL(fontMetrics.underlineY);
+        fontVariant.metrics.underlineThickness = REAL(fontMetrics.underlineThickness);
+        fontVariant.glyphs = artery_font::StdList<artery_font::Glyph<REAL> >(font.getGlyphs().size());
+        int j = 0;
+        for (const GlyphGeometry &glyphGeom : font.getGlyphs()) {
+            artery_font::Glyph<REAL> &glyph = fontVariant.glyphs[j++];
+            glyph.codepoint = glyphGeom.getIdentifier(identifierType);
             glyph.image = 0;
             double l, b, r, t;
-            glyphs[i].getQuadPlaneBounds(l, b, r, t);
-            glyph.planeBounds.l = REAL(fsScale*l);
-            glyph.planeBounds.b = REAL(fsScale*b);
-            glyph.planeBounds.r = REAL(fsScale*r);
-            glyph.planeBounds.t = REAL(fsScale*t);
-            glyphs[i].getQuadAtlasBounds(l, b, r, t);
+            glyphGeom.getQuadPlaneBounds(l, b, r, t);
+            glyph.planeBounds.l = REAL(l);
+            glyph.planeBounds.b = REAL(b);
+            glyph.planeBounds.r = REAL(r);
+            glyph.planeBounds.t = REAL(t);
+            glyphGeom.getQuadAtlasBounds(l, b, r, t);
             glyph.imageBounds.l = REAL(l);
             glyph.imageBounds.b = REAL(b);
             glyph.imageBounds.r = REAL(r);
             glyph.imageBounds.t = REAL(t);
-            glyph.advance.h = REAL(fsScale*glyphs[i].getAdvance());
+            glyph.advance.h = REAL(glyphGeom.getAdvance());
             glyph.advance.v = REAL(0);
-            for (int j = 0; j < glyphCount; ++j) {
-                double kerning;
-                if (msdfgen::getKerning(kerning, font, glyphs[i].getGlyphIndex(), glyphs[j].getGlyphIndex()) && kerning) {
+        }
+        switch (identifierType) {
+            case GlyphIdentifierType::GLYPH_INDEX:
+                for (const std::pair<std::pair<int, int>, double> &elem : font.getKerning()) {
                     artery_font::KernPair<REAL> kernPair = { };
-                    kernPair.codepoint1 = glyphs[i].getIdentifier(properties.glyphIdentifierType);
-                    kernPair.codepoint2 = glyphs[j].getIdentifier(properties.glyphIdentifierType);
-                    kernPair.advance.h = REAL(fsScale*kerning);
+                    kernPair.codepoint1 = elem.first.first;
+                    kernPair.codepoint2 = elem.first.second;
+                    kernPair.advance.h = REAL(elem.second);
                     fontVariant.kernPairs.vector.push_back((artery_font::KernPair<REAL> &&) kernPair);
                 }
-            }
+                break;
+            case GlyphIdentifierType::UNICODE_CODEPOINT:
+                for (const std::pair<std::pair<int, int>, double> &elem : font.getKerning()) {
+                    const GlyphGeometry *glyph1 = font.getGlyph(msdfgen::GlyphIndex(elem.first.first));
+                    const GlyphGeometry *glyph2 = font.getGlyph(msdfgen::GlyphIndex(elem.first.second));
+                    if (glyph1 && glyph2 && glyph1->getCodepoint() && glyph2->getCodepoint()) {
+                        artery_font::KernPair<REAL> kernPair = { };
+                        kernPair.codepoint1 = glyph1->getCodepoint();
+                        kernPair.codepoint2 = glyph2->getCodepoint();
+                        kernPair.advance.h = REAL(elem.second);
+                        fontVariant.kernPairs.vector.push_back((artery_font::KernPair<REAL> &&) kernPair);
+                    }
+                }
+                break;
         }
         arfont.variants.vector.push_back((artery_font::StdFontVariant<REAL> &&) fontVariant);
     }
@@ -149,11 +164,11 @@ bool exportArteryFont(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, in
     return artery_font::writeFile(arfont, filename);
 }
 
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<byte, 1> &atlas, const char *filename, const ArteryFontExportProperties &properties);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<byte, 3> &atlas, const char *filename, const ArteryFontExportProperties &properties);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<byte, 4> &atlas, const char *filename, const ArteryFontExportProperties &properties);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<float, 1> &atlas, const char *filename, const ArteryFontExportProperties &properties);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<float, 3> &atlas, const char *filename, const ArteryFontExportProperties &properties);
-template bool exportArteryFont<float>(msdfgen::FontHandle *font, const GlyphGeometry *glyphs, int glyphCount, const msdfgen::BitmapConstRef<float, 4> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<byte, 1> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<byte, 3> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<byte, 4> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<float, 1> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<float, 3> &atlas, const char *filename, const ArteryFontExportProperties &properties);
+template bool exportArteryFont<float>(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<float, 4> &atlas, const char *filename, const ArteryFontExportProperties &properties);
 
 }
