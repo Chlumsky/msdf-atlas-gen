@@ -74,6 +74,9 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
         fontVariant.metrics.lineHeight = REAL(fontMetrics.lineHeight);
         fontVariant.metrics.underlineY = REAL(fontMetrics.underlineY);
         fontVariant.metrics.underlineThickness = REAL(fontMetrics.underlineThickness);
+        const char *name = font.getName();
+        if (name)
+            fontVariant.name.string = name;
         fontVariant.glyphs = artery_font::StdList<artery_font::Glyph<REAL> >(font.getGlyphs().size());
         int j = 0;
         for (const GlyphGeometry &glyphGeom : font.getGlyphs()) {

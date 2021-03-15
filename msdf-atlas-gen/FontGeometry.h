@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <vector>
+#include <string>
 #include <map>
 #include <msdfgen.h>
 #include <msdfgen-ext.h>
@@ -46,6 +47,8 @@ public:
     bool addGlyph(GlyphGeometry &&glyph);
     /// Loads kerning pairs for all glyphs that are currently present, returns the number of loaded kerning pairs
     int loadKerning(msdfgen::FontHandle *font);
+    /// Sets a name to be associated with the font
+    void setName(const char *name);
 
     /// Returns the geometry scale to be used when loading glyphs
     double getGeometryScale() const;
@@ -63,6 +66,8 @@ public:
     bool getAdvance(double &advance, unicode_t codepoint1, unicode_t codepoint2) const;
     /// Returns the complete mapping of kerning pairs (by glyph indices) and their respective advance values
     const std::map<std::pair<int, int>, double> & getKerning() const;
+    /// Returns the name associated with the font or null if not set
+    const char * getName() const;
 
 private:
     double geometryScale;
@@ -74,6 +79,7 @@ private:
     std::map<unicode_t, size_t> glyphsByCodepoint;
     std::map<std::pair<int, int>, double> kerning;
     std::vector<GlyphGeometry> ownGlyphs;
+    std::string name;
 
 };
 
