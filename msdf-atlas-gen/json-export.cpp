@@ -1,9 +1,44 @@
 
 #include "json-export.h"
 
+#include <string>
 #include "GlyphGeometry.h"
 
 namespace msdf_atlas {
+
+static std::string escapeJsonString(const char *str) {
+    char uval[7] = "\\u0000";
+    std::string outStr;
+    while (*str) {
+        switch (*str) {
+            case '\\':
+                outStr += "\\\\";
+                break;
+            case '"':
+                outStr += "\\\"";
+                break;
+            case '\n':
+                outStr += "\\n";
+                break;
+            case '\r':
+                outStr += "\\r";
+                break;
+            case '\t':
+                outStr += "\\t";
+                break;
+            case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: /* \\t */  /* \\n */  case 0x0b: case 0x0c: /* \\r */  case 0x0e: case 0x0f:
+            case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17: case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
+                uval[4] = '0'+(*str >= 0x10);
+                uval[5] = "0123456789abcdef"[*str&0x0f];
+                outStr += uval;
+                break;
+            default:
+                outStr.push_back(*str);
+        }
+        ++str;
+    }
+    return outStr;
+}
 
 static const char * imageTypeString(ImageType type) {
     switch (type) {
@@ -46,6 +81,11 @@ bool exportJSON(const FontGeometry *fonts, int fontCount, double fontSize, doubl
         const FontGeometry &font = fonts[i];
         if (fontCount > 1)
             fputs(i == 0 ? "{" : ",{", f);
+
+        // Font name
+        const char *name = font.getName();
+        if (name)
+            fprintf(f, "\"name\":\"%s\",", escapeJsonString(name).c_str());
 
         // Font metrics
         fputs("\"metrics\":{", f); {

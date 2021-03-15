@@ -113,6 +113,13 @@ int FontGeometry::loadKerning(msdfgen::FontHandle *font) {
     return loaded;
 }
 
+void FontGeometry::setName(const char *name) {
+    if (name)
+        this->name = name;
+    else
+        this->name.clear();
+}
+
 double FontGeometry::getGeometryScale() const {
     return geometryScale;
 }
@@ -167,6 +174,12 @@ bool FontGeometry::getAdvance(double &advance, unicode_t codepoint1, unicode_t c
 
 const std::map<std::pair<int, int>, double> & FontGeometry::getKerning() const {
     return kerning;
+}
+
+const char * FontGeometry::getName() const {
+    if (name.empty())
+        return nullptr;
+    return name.c_str();
 }
 
 }

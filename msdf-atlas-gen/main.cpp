@@ -49,6 +49,8 @@ INPUT SPECIFICATION
       Specifies the set of input glyphs as glyph indices within the font file.
   -fontscale <scale>
       Specifies the scale to be applied to the glyph geometry of the font.
+  -fontname <name>
+      Specifies a name for the font that will be propagated into the output files as metadata.
   -and
       Separates multiple inputs to be combined into a single atlas.
 
@@ -159,6 +161,7 @@ struct FontInput {
     GlyphIdentifierType glyphIdentifierType;
     const char *charsetFilename;
     double fontScale;
+    const char *fontName;
 };
 
 struct Configuration {
@@ -330,12 +333,18 @@ int main(int argc, const char * const *argv) {
             ++argPos;
             continue;
         }
+        ARG_CASE("-fontname", 1) {
+            fontInput.fontName = argv[++argPos];
+            ++argPos;
+            continue;
+        }
         ARG_CASE("-and", 0) {
             if (!fontInput.fontFilename && !fontInput.charsetFilename && fontInput.fontScale < 0)
                 ABORT("No font, character set, or font scale specified before -and separator.");
             if (!fontInputs.empty() && !memcmp(&fontInputs.back(), &fontInput, sizeof(FontInput)))
                 ABORT("No changes between subsequent inputs. A different font, character set, or font scale must be set inbetween -and separators.");
             fontInputs.push_back(fontInput);
+            fontInput.fontName = nullptr;
             ++argPos;
             continue;
         }
@@ -723,6 +732,9 @@ int main(int argc, const char * const *argv) {
                 }
                 printf("\n");
             }
+
+            if (fontInput.fontName)
+                fontGeometry.setName(fontInput.fontName);
 
             fonts.push_back((FontGeometry &&) fontGeometry);
         }

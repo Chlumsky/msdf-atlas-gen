@@ -42,10 +42,11 @@ Use the following command line arguments for the standalone version of the atlas
 
 ### Input
 
-- `-font <fontfile.ttf/otf>` &ndash; sets the input font file.
+- `-font <fontfile.ttf/otf>` (required) &ndash; sets the input font file.
 - `-charset <charset.txt>` &ndash; sets the character set. The ASCII charset will be used if not specified. See [the syntax specification](#character-set-specification-syntax) of `charset.txt`.
 - `-glyphset <glyphset.txt>` &ndash; sets the set of input glyphs using their indices within the font file. See [the syntax specification](#glyph-set-specification).
 - `-fontscale <scale>` &ndash; applies a scaling transformation to the font's glyphs. Mainly to be used to generate multiple sizes in a single atlas, otherwise use [`-size`](#glyph-configuration).
+- `-fontname <name>` &ndash; sets a name for the font that will be stored in certain output files as metadata.
 - `-and` &ndash; separates multiple inputs to be combined into a single atlas.
 
 ### Bitmap atlas type
@@ -89,7 +90,7 @@ Alternativelly, the minimum possible dimensions may be selected automatically if
 
 ### Outputs
 
-Any subset of the following may be specified:
+Any non-empty subset of the following may be specified:
 
 - `-imageout <filename.*>` &ndash; saves the atlas bitmap as a plain image file. Format matches `-format`
 - `-json <filename.json>` &ndash; writes the atlas's layout data as well as other metrics into a structured JSON file
