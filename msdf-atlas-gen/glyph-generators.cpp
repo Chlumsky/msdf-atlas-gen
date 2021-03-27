@@ -20,7 +20,7 @@ void psdfGenerator(const msdfgen::BitmapRef<float, 1> &output, const GlyphGeomet
 }
 
 void msdfGenerator(const msdfgen::BitmapRef<float, 3> &output, const GlyphGeometry &glyph, const GeneratorAttributes &attribs) {
-    msdfgen::generateMSDF(output, glyph.getShape(), glyph.getBoxRange(), glyph.getBoxScale(), glyph.getBoxTranslate(), attribs.scanlinePass ? 0 : attribs.errorCorrectionThreshold, attribs.overlapSupport);
+    msdfgen::generateMSDF(output, glyph.getShape(), glyph.getBoxRange(), glyph.getBoxScale(), glyph.getBoxTranslate(), attribs.errorCorrectionThreshold, attribs.overlapSupport);
     if (attribs.scanlinePass) {
         msdfgen::distanceSignCorrection(output, glyph.getShape(), glyph.getBoxScale(), glyph.getBoxTranslate(), MSDF_ATLAS_GLYPH_FILL_RULE);
         if (attribs.errorCorrectionThreshold > 0)
@@ -29,7 +29,7 @@ void msdfGenerator(const msdfgen::BitmapRef<float, 3> &output, const GlyphGeomet
 }
 
 void mtsdfGenerator(const msdfgen::BitmapRef<float, 4> &output, const GlyphGeometry &glyph, const GeneratorAttributes &attribs) {
-    msdfgen::generateMTSDF(output, glyph.getShape(), glyph.getBoxRange(), glyph.getBoxScale(), glyph.getBoxTranslate(), attribs.scanlinePass ? 0 :attribs.errorCorrectionThreshold, attribs.overlapSupport);
+    msdfgen::generateMTSDF(output, glyph.getShape(), glyph.getBoxRange(), glyph.getBoxScale(), glyph.getBoxTranslate(), attribs.errorCorrectionThreshold, attribs.overlapSupport);
     if (attribs.scanlinePass) {
         msdfgen::distanceSignCorrection(output, glyph.getShape(), glyph.getBoxScale(), glyph.getBoxTranslate(), MSDF_ATLAS_GLYPH_FILL_RULE);
         if (attribs.errorCorrectionThreshold > 0)
