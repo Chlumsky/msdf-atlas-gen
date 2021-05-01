@@ -43,4 +43,10 @@ enum class GlyphIdentifierType {
     UNICODE_CODEPOINT
 };
 
+/// Direction of the Y-axis
+enum class YDirection {
+    BOTTOM_UP,
+    TOP_DOWN
+};
+
 }

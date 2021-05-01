@@ -154,9 +154,22 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
                     return false;
                 image.encoding = artery_font::IMAGE_RAW_BINARY;
                 image.rawBinaryFormat.rowLength = N*sizeof(T)*atlas.width;
-                image.rawBinaryFormat.orientation = artery_font::ORIENTATION_BOTTOM_UP;
                 image.data = artery_font::StdByteArray(N*sizeof(T)*atlas.width*atlas.height);
-                memcpy((byte *) image.data, atlas.pixels, N*sizeof(T)*atlas.width*atlas.height);
+                switch (properties.yDirection) {
+                    case YDirection::BOTTOM_UP:
+                        image.rawBinaryFormat.orientation = artery_font::ORIENTATION_BOTTOM_UP;
+                        memcpy((byte *) image.data, atlas.pixels, N*sizeof(T)*atlas.width*atlas.height);
+                        break;
+                    case YDirection::TOP_DOWN: {
+                        image.rawBinaryFormat.orientation = artery_font::ORIENTATION_TOP_DOWN;
+                        byte *imageData = (byte *) image.data;
+                        for (int y = atlas.height-1; y >= 0; --y) {
+                            memcpy(imageData, atlas.pixels+N*atlas.width*y, N*sizeof(T)*atlas.width);
+                            imageData += N*sizeof(T)*atlas.width;
+                        }
+                        break;
+                    }
+                }
                 break;
             default:
                 return false;

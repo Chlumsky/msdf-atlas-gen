@@ -13,6 +13,7 @@ struct ArteryFontExportProperties {
     double pxRange;
     ImageType imageType;
     ImageFormat imageFormat;
+    YDirection yDirection;
 };
 
 /// Encodes the atlas bitmap and its layout into an Artery Atlas Font file

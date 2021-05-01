@@ -64,6 +64,8 @@ ATLAS CONFIGURATION
   -pots / -potr / -square / -square2 / -square4
       Picks the minimum atlas dimensions that fit all glyphs and satisfy the selected constraint:
       power of two square / ... rectangle / any square / square with side divisible by 2 / ... 4
+  -yorigin <bottom / top>
+      Determines whether the Y-axis is oriented upwards (bottom origin, default) or downwards (top origin).
 
 OUTPUT SPECIFICATION - one or more can be specified
   -imageout <filename.*>
@@ -167,6 +169,7 @@ struct FontInput {
 struct Configuration {
     ImageType imageType;
     ImageFormat imageFormat;
+    YDirection yDirection;
     int width, height;
     double emSize;
     double pxRange;
@@ -196,7 +199,7 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
     bool success = true;
 
     if (config.imageFilename) {
-        if (saveImage(bitmap, config.imageFormat, config.imageFilename))
+        if (saveImage(bitmap, config.imageFormat, config.imageFilename, config.yDirection))
             puts("Atlas image file saved.");
         else {
             success = false;
@@ -210,6 +213,7 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
         arfontProps.pxRange = config.pxRange;
         arfontProps.imageType = config.imageType;
         arfontProps.imageFormat = config.imageFormat;
+        arfontProps.yDirection = config.yDirection;
         if (exportArteryFont<float>(fonts.data(), fonts.size(), bitmap, config.arteryFontFilename, arfontProps))
             puts("Artery Font file generated.");
         else {
@@ -230,9 +234,10 @@ int main(int argc, const char * const *argv) {
     Configuration config = { };
     fontInput.glyphIdentifierType = GlyphIdentifierType::UNICODE_CODEPOINT;
     fontInput.fontScale = -1;
-    config.kerning = true;
     config.imageType = ImageType::MSDF;
     config.imageFormat = ImageFormat::UNSPECIFIED;
+    config.yDirection = YDirection::BOTTOM_UP;
+    config.kerning = true;
     const char *imageFormatName = nullptr;
     int fixedWidth = -1, fixedHeight = -1;
     config.preprocessGeometry = (
@@ -409,6 +414,17 @@ int main(int argc, const char * const *argv) {
         ARG_CASE("-square4", 0) {
             atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
             fixedWidth = -1, fixedHeight = -1;
+            ++argPos;
+            continue;
+        }
+        ARG_CASE("-yorigin", 1) {
+            arg = argv[++argPos];
+            if (!strcmp(arg, "bottom"))
+                config.yDirection = YDirection::BOTTOM_UP;
+            else if (!strcmp(arg, "top"))
+                config.yDirection = YDirection::TOP_DOWN;
+            else
+                ABORT("Invalid Y-axis origin. Use bottom or top.");
             ++argPos;
             continue;
         }
@@ -839,7 +855,7 @@ int main(int argc, const char * const *argv) {
     }
 
     if (config.csvFilename) {
-        if (exportCSV(fonts.data(), fonts.size(), config.csvFilename))
+        if (exportCSV(fonts.data(), fonts.size(), config.width, config.height, config.yDirection, config.csvFilename))
             puts("Glyph layout written into CSV file.");
         else {
             result = 1;
@@ -847,7 +863,7 @@ int main(int argc, const char * const *argv) {
         }
     }
     if (config.jsonFilename) {
-        if (exportJSON(fonts.data(), fonts.size(), config.emSize, config.pxRange, config.width, config.height, config.imageType, config.jsonFilename, config.kerning))
+        if (exportJSON(fonts.data(), fonts.size(), config.emSize, config.pxRange, config.width, config.height, config.imageType, config.yDirection, config.jsonFilename, config.kerning))
             puts("Glyph layout and metadata written into JSON file.");
         else {
             result = 1;
