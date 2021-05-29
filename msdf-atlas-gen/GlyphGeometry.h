@@ -17,7 +17,7 @@ public:
     bool load(msdfgen::FontHandle *font, double geometryScale, msdfgen::GlyphIndex index, bool preprocessGeometry = true);
     bool load(msdfgen::FontHandle *font, double geometryScale, unicode_t codepoint, bool preprocessGeometry = true);
     /// Applies edge coloring to glyph shape
-    void edgeColoring(double angleThreshold, unsigned long long seed);
+    void edgeColoring(void (*fn)(msdfgen::Shape &, double, unsigned long long), double angleThreshold, unsigned long long seed);
     /// Computes the dimensions of the glyph's box as well as the transformation for the generator function
     void wrapBox(double scale, double range, double miterLimit);
     /// Sets the glyph's box's position in the atlas

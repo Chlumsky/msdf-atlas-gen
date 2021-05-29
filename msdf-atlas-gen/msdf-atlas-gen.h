@@ -2,9 +2,9 @@
 #pragma once
 
 /*
- * MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.1 (2020-10-18)
+ * MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.2 (2021-05-29)
  * ---------------------------------------------------------------------
- * A utility by Viktor Chlumsky, (c) 2020
+ * A utility by Viktor Chlumsky, (c) 2020 - 2021
  *
  * Generates compact bitmap font atlases using MSDFGEN.
  *
@@ -39,4 +39,4 @@
 #include "json-export.h"
 #include "shadron-preview-generator.h"
 
-#define MSDF_ATLAS_VERSION "1.1"
+#define MSDF_ATLAS_VERSION "1.2"

@@ -108,13 +108,16 @@ Any non-empty subset of the following may be specified:
 ### Distance field generator settings
 
 - `-angle <angle>` &ndash; sets the minimum angle between adjacent edges to be considered a corner. Append D for degrees (`msdf` / `mtsdf` only)
-- `-errorcorrection <threshold>` &ndash; sets the threshold used to detect and correct potential artifacts. 0 disables error correction (`msdf` / `mtsdf` only)
+- `-coloringstrategy <simple / inktrap / distance>` &ndash; selects the edge coloring heuristic (`msdf` / `mtsdf` only)
+- `-errorcorrection <mode>` &ndash; selects the error correction algorithm. Use `help` as mode for more information (`msdf` / `mtsdf` only)
 - `-miterlimit <value>` &ndash; sets the miter limit that limits the extension of each glyph's bounding box due to very sharp corners (`psdf` / `msdf` / `mtsdf` only)
 - `-overlap` &ndash; switches to distance field generator with support for overlapping contours
 - `-nopreprocess` &ndash; disables path preprocessing which resolves self-intersections and overlapping contours
 - `-scanline` &ndash; performs an additional scanline pass to fix the signs of the distances
 - `-seed <N>` &ndash; sets the initial seed for the edge coloring heuristic
 - `-threads <N>` &ndash; sets the number of threads for the parallel computation (0 = auto)
+
+Use `-help` for an exhaustive list of options.
 
 ## Character set specification syntax
 

@@ -1,8 +1,8 @@
 
 /*
-* MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.1 (2020-10-18) - standalone console program
+* MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.2 (2021-05-29) - standalone console program
 * --------------------------------------------------------------------------------------------------
-* A utility by Viktor Chlumsky, (c) 2020
+* A utility by Viktor Chlumsky, (c) 2020 - 2021
 *
 */
 
@@ -26,7 +26,8 @@ using namespace msdf_atlas;
 #define DEFAULT_PIXEL_RANGE 2.0
 #define SDF_ERROR_ESTIMATE_PRECISION 19
 #define GLYPH_FILL_RULE msdfgen::FILL_NONZERO
-#define MCG_MULTIPLIER 6364136223846793005ull
+#define LCG_MULTIPLIER 6364136223846793005ull
+#define LCG_INCREMENT 1442695040888963407ull
 
 #ifdef MSDFGEN_USE_SKIA
     #define TITLE_SUFFIX    " & Skia"
@@ -94,6 +95,8 @@ GLYPH CONFIGURATION
 DISTANCE FIELD GENERATOR SETTINGS
   -angle <angle>
       Specifies the minimum angle between adjacent edges to be considered a corner. Append D for degrees. (msdf / mtsdf only)
+  -coloringstrategy <simple / inktrap / distance>
+      Selects the strategy of the edge coloring heuristic.
   -errorcorrection <mode>
       Changes the MSDF/MTSDF error correction mode. Use -errorcorrection help for a list of valid modes.
   -errordeviationratio <ratio>
@@ -201,6 +204,8 @@ struct Configuration {
     double pxRange;
     double angleThreshold;
     double miterLimit;
+    void (*edgeColoring)(msdfgen::Shape &, double, unsigned long long);
+    bool expensiveColoring;
     unsigned long long coloringSeed;
     GeneratorAttributes generatorAttributes;
     bool preprocessGeometry;
@@ -263,6 +268,7 @@ int main(int argc, const char * const *argv) {
     config.imageType = ImageType::MSDF;
     config.imageFormat = ImageFormat::UNSPECIFIED;
     config.yDirection = YDirection::BOTTOM_UP;
+    config.edgeColoring = msdfgen::edgeColoringInkTrap;
     config.kerning = true;
     const char *imageFormatName = nullptr;
     int fixedWidth = -1, fixedHeight = -1;
@@ -544,6 +550,15 @@ int main(int argc, const char * const *argv) {
             if (!(parseDouble(eir, argv[argPos+1]) && eir > 0))
                 ABORT("Invalid error improvement ratio. Use -errorimproveratio <ratio> with a positive real number.");
             config.generatorAttributes.config.errorCorrection.minImproveRatio = eir;
+            argPos += 2;
+            continue;
+        }
+        ARG_CASE("-coloringstrategy", 1) {
+            if (!strcmp(argv[argPos+1], "simple")) config.edgeColoring = msdfgen::edgeColoringSimple, config.expensiveColoring = false;
+            else if (!strcmp(argv[argPos+1], "inktrap")) config.edgeColoring = msdfgen::edgeColoringInkTrap, config.expensiveColoring = false;
+            else if (!strcmp(argv[argPos+1], "distance")) config.edgeColoring = msdfgen::edgeColoringByDistance, config.expensiveColoring = true;
+            else
+                puts("Unknown coloring strategy specified.");
             argPos += 2;
             continue;
         }
@@ -891,10 +906,18 @@ int main(int argc, const char * const *argv) {
 
         // Edge coloring
         if (config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF) {
-            unsigned long long glyphSeed = config.coloringSeed;
-            for (GlyphGeometry &glyph : glyphs) {
-                glyphSeed *= MCG_MULTIPLIER;
-                glyph.edgeColoring(config.angleThreshold, glyphSeed);
+            if (config.expensiveColoring) {
+                Workload([&glyphs, &config](int i, int threadNo) -> bool {
+                    unsigned long long glyphSeed = (LCG_MULTIPLIER*(config.coloringSeed^i)+LCG_INCREMENT)*!!config.coloringSeed;
+                    glyphs[i].edgeColoring(config.edgeColoring, config.angleThreshold, glyphSeed);
+                    return true;
+                }, glyphs.size()).finish(config.threadCount);
+            } else {
+                unsigned long long glyphSeed = config.coloringSeed;
+                for (GlyphGeometry &glyph : glyphs) {
+                    glyphSeed *= LCG_MULTIPLIER;
+                    glyph.edgeColoring(config.edgeColoring, config.angleThreshold, glyphSeed);
+                }
             }
         }
 

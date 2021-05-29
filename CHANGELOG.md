@@ -1,4 +1,12 @@
 
+## Version 1.2 (2021-05-29)
+
+- Updated to MSDFgen 1.9.
+- Multiple fonts or font sizes can now be compiled into a single atlas.
+- Added `-yorigin` option to choose if Y-coordinates increase from bottom to top or from top to bottom.
+- Added `-coloringstrategy` option to select MSDF edge coloring heuristic.
+- Shadron preview now properly loads floating-point image outputs in full range mode.
+
 ## Version 1.1 (2020-10-18)
 
 - Updated to MSDFgen 1.8.

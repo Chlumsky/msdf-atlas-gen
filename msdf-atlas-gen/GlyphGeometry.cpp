@@ -47,8 +47,8 @@ bool GlyphGeometry::load(msdfgen::FontHandle *font, double geometryScale, unicod
     return false;
 }
 
-void GlyphGeometry::edgeColoring(double angleThreshold, unsigned long long seed) {
-    msdfgen::edgeColoringInkTrap(shape, angleThreshold, seed);
+void GlyphGeometry::edgeColoring(void (*fn)(msdfgen::Shape &, double, unsigned long long), double angleThreshold, unsigned long long seed) {
+    fn(shape, angleThreshold, seed);
 }
 
 void GlyphGeometry::wrapBox(double scale, double range, double miterLimit) {
