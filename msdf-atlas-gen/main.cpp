@@ -94,8 +94,12 @@ GLYPH CONFIGURATION
 DISTANCE FIELD GENERATOR SETTINGS
   -angle <angle>
       Specifies the minimum angle between adjacent edges to be considered a corner. Append D for degrees. (msdf / mtsdf only)
-  -errorcorrection <threshold>
-      Changes the threshold used to detect and correct potential artifacts. 0 disables error correction. (msdf / mtsdf only)
+  -errorcorrection <mode>
+      Changes the MSDF/MTSDF error correction mode. Use -errorcorrection help for a list of valid modes.
+  -errordeviationratio <ratio>
+      Sets the minimum ratio between the actual and maximum expected distance delta to be considered an error.
+  -errorimproveratio <ratio>
+      Sets the minimum ratio between the pre-correction distance error and the post-correction distance error.
   -miterlimit <value>
       Sets the miter limit that limits the extension of each glyph's bounding box due to very sharp corners. (psdf / msdf / mtsdf only))"
 #ifdef MSDFGEN_USE_SKIA
@@ -118,6 +122,28 @@ R"(
       Sets the initial seed for the edge coloring heuristic.
   -threads <N>
       Sets the number of threads for the parallel computation. (0 = auto)
+)";
+
+static const char *errorCorrectionHelpText = R"(
+ERROR CORRECTION MODES
+  auto-fast
+      Detects inversion artifacts and distance errors that do not affect edges by range testing.
+  auto-full
+      Detects inversion artifacts and distance errors that do not affect edges by exact distance evaluation.
+  auto-mixed (default)
+      Detects inversions by distance evaluation and distance errors that do not affect edges by range testing.
+  disabled
+      Disables error correction.
+  distance-fast
+      Detects distance errors by range testing. Does not care if edges and corners are affected.
+  distance-full
+      Detects distance errors by exact distance evaluation. Does not care if edges and corners are affected, slow.
+  edge-fast
+      Detects inversion artifacts only by range testing.
+  edge-full
+      Detects inversion artifacts only by exact distance evaluation.
+  help
+      Displays this help.
 )";
 
 static char toupper(char c) {
@@ -247,9 +273,8 @@ int main(int argc, const char * const *argv) {
             false
         #endif
     );
-    config.generatorAttributes.overlapSupport = !config.preprocessGeometry;
+    config.generatorAttributes.config.overlapSupport = !config.preprocessGeometry;
     config.generatorAttributes.scanlinePass = !config.preprocessGeometry;
-    config.generatorAttributes.errorCorrectionThreshold = MSDFGEN_DEFAULT_ERROR_CORRECTION_THRESHOLD;
     double minEmSize = 0;
     enum {
         /// Range specified in EMs
@@ -266,6 +291,7 @@ int main(int argc, const char * const *argv) {
     // Parse command line
     int argPos = 1;
     bool suggestHelp = false;
+    bool explicitErrorCorrectionMode = false;
     while (argPos < argc) {
         const char *arg = argv[argPos];
         #define ARG_CASE(s, p) if (!strcmp(arg, s) && argPos+(p) < argc)
@@ -471,10 +497,53 @@ int main(int argc, const char * const *argv) {
             continue;
         }
         ARG_CASE("-errorcorrection", 1) {
-            double ect;
-            if (!parseDouble(ect, argv[argPos+1]) || ect < 0)
-                ABORT("Invalid error correction threshold. Use -errorcorrection <threshold> with a real number larger or equal to 1.");
-            config.generatorAttributes.errorCorrectionThreshold = ect;
+            msdfgen::ErrorCorrectionConfig &ec = config.generatorAttributes.config.errorCorrection;
+            if (!strcmp(argv[argPos+1], "disabled") || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "none")) {
+                ec.mode = msdfgen::ErrorCorrectionConfig::DISABLED;
+                ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
+            } else if (!strcmp(argv[argPos+1], "default") || !strcmp(argv[argPos+1], "auto") || !strcmp(argv[argPos+1], "auto-mixed") || !strcmp(argv[argPos+1], "mixed")) {
+                ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+                ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::CHECK_DISTANCE_AT_EDGE;
+            } else if (!strcmp(argv[argPos+1], "auto-fast") || !strcmp(argv[argPos+1], "fast")) {
+                ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+                ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
+            } else if (!strcmp(argv[argPos+1], "auto-full") || !strcmp(argv[argPos+1], "full")) {
+                ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+                ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
+            } else if (!strcmp(argv[argPos+1], "distance") || !strcmp(argv[argPos+1], "distance-fast") || !strcmp(argv[argPos+1], "indiscriminate") || !strcmp(argv[argPos+1], "indiscriminate-fast")) {
+                ec.mode = msdfgen::ErrorCorrectionConfig::INDISCRIMINATE;
+                ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
+            } else if (!strcmp(argv[argPos+1], "distance-full") || !strcmp(argv[argPos+1], "indiscriminate-full")) {
+                ec.mode = msdfgen::ErrorCorrectionConfig::INDISCRIMINATE;
+                ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
+            } else if (!strcmp(argv[argPos+1], "edge-fast")) {
+                ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_ONLY;
+                ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
+            } else if (!strcmp(argv[argPos+1], "edge") || !strcmp(argv[argPos+1], "edge-full")) {
+                ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_ONLY;
+                ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
+            } else if (!strcmp(argv[argPos+1], "help")) {
+                puts(errorCorrectionHelpText);
+                return 0;
+            } else
+                ABORT("Unknown error correction mode. Use -errorcorrection help for more information.");
+            explicitErrorCorrectionMode = true;
+            argPos += 2;
+            continue;
+        }
+        ARG_CASE("-errordeviationratio", 1) {
+            double edr;
+            if (!(parseDouble(edr, argv[argPos+1]) && edr > 0))
+                ABORT("Invalid error deviation ratio. Use -errordeviationratio <ratio> with a positive real number.");
+            config.generatorAttributes.config.errorCorrection.minDeviationRatio = edr;
+            argPos += 2;
+            continue;
+        }
+        ARG_CASE("-errorimproveratio", 1) {
+            double eir;
+            if (!(parseDouble(eir, argv[argPos+1]) && eir > 0))
+                ABORT("Invalid error improvement ratio. Use -errorimproveratio <ratio> with a positive real number.");
+            config.generatorAttributes.config.errorCorrection.minImproveRatio = eir;
             argPos += 2;
             continue;
         }
@@ -507,12 +576,12 @@ int main(int argc, const char * const *argv) {
             continue;
         }
         ARG_CASE("-nooverlap", 0) {
-            config.generatorAttributes.overlapSupport = false;
+            config.generatorAttributes.config.overlapSupport = false;
             ++argPos;
             continue;
         }
         ARG_CASE("-overlap", 0) {
-            config.generatorAttributes.overlapSupport = true;
+            config.generatorAttributes.config.overlapSupport = true;
             ++argPos;
             continue;
         }
@@ -607,6 +676,19 @@ int main(int argc, const char * const *argv) {
         config.kerning = false;
     if (config.threadCount <= 0)
         config.threadCount = std::max((int) std::thread::hardware_concurrency(), 1);
+    if (config.generatorAttributes.scanlinePass) {
+        if (explicitErrorCorrectionMode && config.generatorAttributes.config.errorCorrection.distanceCheckMode != msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE) {
+            const char *fallbackModeName = "unknown";
+            switch (config.generatorAttributes.config.errorCorrection.mode) {
+                case msdfgen::ErrorCorrectionConfig::DISABLED: fallbackModeName = "disabled"; break;
+                case msdfgen::ErrorCorrectionConfig::INDISCRIMINATE: fallbackModeName = "distance-fast"; break;
+                case msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY: fallbackModeName = "auto-fast"; break;
+                case msdfgen::ErrorCorrectionConfig::EDGE_ONLY: fallbackModeName = "edge-fast"; break;
+            }
+            printf("Selected error correction mode not compatible with scanline mode, falling back to %s.\n", fallbackModeName);
+        }
+        config.generatorAttributes.config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
+    }
 
     // Finalize image format
     ImageFormat imageExtension = ImageFormat::UNSPECIFIED;

@@ -31,9 +31,8 @@ public:
 
 /// Configuration of signed distance field generator
 struct GeneratorAttributes {
-    bool overlapSupport = false;
+    msdfgen::MSDFGeneratorConfig config;
     bool scanlinePass = false;
-    double errorCorrectionThreshold = MSDFGEN_DEFAULT_ERROR_CORRECTION_THRESHOLD;
 };
 
 /// A function that generates the bitmap for a single glyph

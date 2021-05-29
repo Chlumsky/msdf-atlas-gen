@@ -121,6 +121,10 @@ double GlyphGeometry::getBoxRange() const {
     return box.range;
 }
 
+msdfgen::Projection GlyphGeometry::getBoxProjection() const {
+    return msdfgen::Projection(msdfgen::Vector2(box.scale), box.translate);
+}
+
 double GlyphGeometry::getBoxScale() const {
     return box.scale;
 }

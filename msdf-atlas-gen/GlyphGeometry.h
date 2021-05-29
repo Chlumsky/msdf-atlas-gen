@@ -40,6 +40,8 @@ public:
     void getBoxSize(int &w, int &h) const;
     /// Returns the range needed to generate the glyph's SDF
     double getBoxRange() const;
+    /// Returns the projection needed to generate the glyph's bitmap
+    msdfgen::Projection getBoxProjection() const;
     /// Returns the scale needed to generate the glyph's bitmap
     double getBoxScale() const;
     /// Returns the translation vector needed to generate the glyph's bitmap

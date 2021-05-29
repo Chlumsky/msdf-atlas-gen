@@ -69,10 +69,10 @@ double TightAtlasPacker::packAndScale(GlyphGeometry *glyphs, int count, int widt
     #define TRY_PACK(scale) (lastResult = !tryPack(glyphs, count, DimensionsConstraint(), width, height, padding, (scale), unitRange+pxRange/(scale), miterLimit))
     double minScale = 1, maxScale = 1;
     if (TRY_PACK(1)) {
-        while (maxScale < 1e+32 && TRY_PACK(maxScale = 2*minScale))
+        while (maxScale < 1e+32 && ((maxScale = 2*minScale), TRY_PACK(maxScale)))
             minScale = maxScale;
     } else {
-        while (minScale > 1e-32 && !TRY_PACK(minScale = .5*maxScale))
+        while (minScale > 1e-32 && ((minScale = .5*maxScale), !TRY_PACK(minScale)))
             maxScale = minScale;
     }
     if (minScale == maxScale)
