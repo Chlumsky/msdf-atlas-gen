@@ -34,6 +34,7 @@ private:
     AtlasStorage storage;
     std::vector<GlyphBox> layout;
     std::vector<T> glyphBuffer;
+    std::vector<byte> errorCorrectionBuffer;
     GeneratorAttributes attributes;
     int threadCount;
 

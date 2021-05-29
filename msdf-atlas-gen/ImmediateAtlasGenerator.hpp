@@ -22,14 +22,21 @@ void ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::generate(const GlyphGe
     int threadBufferSize = N*maxBoxArea;
     if (threadCount*threadBufferSize > (int) glyphBuffer.size())
         glyphBuffer.resize(threadCount*threadBufferSize);
+    if (threadCount*maxBoxArea > (int) errorCorrectionBuffer.size())
+        errorCorrectionBuffer.resize(threadCount*maxBoxArea);
+    std::vector<GeneratorAttributes> threadAttributes(threadCount);
+    for (int i = 0; i < threadCount; ++i) {
+        threadAttributes[i] = attributes;
+        threadAttributes[i].config.errorCorrection.buffer = errorCorrectionBuffer.data()+i*maxBoxArea;
+    }
 
-    Workload([this, &glyphs, threadBufferSize](int i, int threadNo) -> bool {
+    Workload([this, glyphs, &threadAttributes, threadBufferSize](int i, int threadNo) -> bool {
         const GlyphGeometry &glyph = glyphs[i];
         if (!glyph.isWhitespace()) {
             int l, b, w, h;
             glyph.getBoxRect(l, b, w, h);
             msdfgen::BitmapRef<T, N> glyphBitmap(glyphBuffer.data()+threadNo*threadBufferSize, w, h);
-            GEN_FN(glyphBitmap, glyph, attributes);
+            GEN_FN(glyphBitmap, glyph, threadAttributes[threadNo]);
             storage.put(l, b, msdfgen::BitmapConstRef<T, N>(glyphBitmap));
         }
         return true;
