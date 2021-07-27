@@ -141,12 +141,12 @@ template <int N>
 bool saveImageText(const msdfgen::BitmapConstRef<byte, N> &bitmap, const char *filename, YDirection outputYDirection) {
     bool success = false;
     if (FILE *f = fopen(filename, "wb")) {
+        success = true;
         for (int y = 0; y < bitmap.height; ++y) {
             const byte *p = bitmap.pixels+N*bitmap.width*(outputYDirection == YDirection::TOP_DOWN ? bitmap.height-y-1 : y);
-            for (int x = 0; x < N*bitmap.width; ++x) {
-                fprintf(f, x ? " %02X" : "%02X", (unsigned) *p++);
-            }
-            fprintf(f, "\n");
+            for (int x = 0; x < N*bitmap.width; ++x)
+                success &= fprintf(f, x ? " %02X" : "%02X", (unsigned) *p++) > 0;
+            success &= fprintf(f, "\n") > 0;
         }
         fclose(f);
     }
@@ -157,12 +157,12 @@ template <int N>
 bool saveImageText(const msdfgen::BitmapConstRef<float, N> &bitmap, const char *filename, YDirection outputYDirection) {
     bool success = false;
     if (FILE *f = fopen(filename, "wb")) {
+        success = true;
         for (int y = 0; y < bitmap.height; ++y) {
             const float *p = bitmap.pixels+N*bitmap.width*(outputYDirection == YDirection::TOP_DOWN ? bitmap.height-y-1 : y);
-            for (int x = 0; x < N*bitmap.width; ++x) {
-                fprintf(f, x ? " %g" : "%g", *p++);
-            }
-            fprintf(f, "\n");
+            for (int x = 0; x < N*bitmap.width; ++x)
+                success &= fprintf(f, x ? " %g" : "%g", *p++) > 0;
+            success &= fprintf(f, "\n") > 0;
         }
         fclose(f);
     }
