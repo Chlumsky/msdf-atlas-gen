@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(msdf-atlas-gen LANGUAGES CXX)
 
-find_package(msdfgen REQUIRED)
+add_subdirectory(msdfgen)
 
 #----------------------------------------------------------------
 # Gathering files
@@ -33,6 +33,7 @@ target_include_directories(msdf-atlas-gen
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/artery-font-format"
         "${CMAKE_CURRENT_SOURCE_DIR}/msdfgen/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/msdfgen"
 )
 
 #----------------------------------------------------------------
