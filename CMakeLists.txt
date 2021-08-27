@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(msdf-atlas-gen LANGUAGES CXX)
 
 add_subdirectory(msdfgen)
+find_package(Threads REQUIRED)
 
 #----------------------------------------------------------------
 # Gathering files
@@ -25,6 +26,7 @@ target_compile_definitions(msdf-atlas-gen
 
 target_link_libraries(msdf-atlas-gen
     PRIVATE
+        Threads::Threads
         msdfgen::msdfgen
         msdfgen::msdfgen-ext
 )
