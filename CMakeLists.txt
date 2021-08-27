@@ -10,7 +10,7 @@ find_package(Threads REQUIRED)
 #----------------------------------------------------------------
 
 file(GLOB_RECURSE msdf-atlas-gen_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-	"msdf-atlas-gen/*.cpp"
+    "msdf-atlas-gen/*.cpp"
 )
 
 #----------------------------------------------------------------
