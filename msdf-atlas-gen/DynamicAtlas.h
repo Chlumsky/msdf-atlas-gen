@@ -33,7 +33,6 @@ private:
     std::vector<Rectangle> rectangles;
     std::vector<Remap> remapBuffer;
     int totalArea;
-    GeneratorAttributes genAttribs;
     int padding;
 
 };

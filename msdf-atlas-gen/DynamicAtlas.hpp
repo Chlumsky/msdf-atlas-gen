@@ -52,7 +52,7 @@ void DynamicAtlas<AtlasGenerator>::add(GlyphGeometry *glyphs, int count) {
             glyphs[remapBuffer[i].index-glyphCount].placeBox(rectangles[i].x, rectangles[i].y);
         }
     }
-    generator.generate(glyphs, count, genAttribs);
+    generator.generate(glyphs, count);
     glyphCount += count;
 }
 
