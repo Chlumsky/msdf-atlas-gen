@@ -78,6 +78,10 @@ void GlyphGeometry::placeBox(int x, int y) {
     box.rect.x = x, box.rect.y = y;
 }
 
+void GlyphGeometry::setBoxRect(const Rectangle &rect) {
+    box.rect = rect;
+}
+
 int GlyphGeometry::getIndex() const {
     return index;
 }
@@ -106,6 +110,10 @@ const msdfgen::Shape & GlyphGeometry::getShape() const {
 
 double GlyphGeometry::getAdvance() const {
     return advance;
+}
+
+Rectangle GlyphGeometry::getBoxRect() const {
+    return box.rect;
 }
 
 void GlyphGeometry::getBoxRect(int &x, int &y, int &w, int &h) const {

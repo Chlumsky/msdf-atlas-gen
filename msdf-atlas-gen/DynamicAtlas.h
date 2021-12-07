@@ -16,11 +16,18 @@ template <class AtlasGenerator>
 class DynamicAtlas {
 
 public:
+    enum ChangeFlag {
+        NO_CHANGE = 0x00,
+        RESIZED = 0x01,
+        REARRANGED = 0x02
+    };
+    typedef int ChangeFlags;
+
     DynamicAtlas();
     /// Creates with a configured generator. The generator must not contain any prior glyphs!
     explicit DynamicAtlas(AtlasGenerator &&generator);
     /// Adds a batch of glyphs. Adding more than one glyph at a time may improve packing efficiency
-    void add(GlyphGeometry *glyphs, int count);
+    ChangeFlags add(GlyphGeometry *glyphs, int count);
     /// Allows access to generator. Do not add glyphs to the generator directly!
     AtlasGenerator & atlasGenerator();
     const AtlasGenerator & atlasGenerator() const;

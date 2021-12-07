@@ -74,4 +74,9 @@ const AtlasStorage & ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::atlasS
     return storage;
 }
 
+template <typename T, int N, GeneratorFunction<T, N> GEN_FN, class AtlasStorage>
+const std::vector<GlyphBox> & ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::getLayout() const {
+    return layout;
+}
+
 }
