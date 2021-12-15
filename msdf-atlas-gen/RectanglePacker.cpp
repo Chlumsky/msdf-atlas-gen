@@ -25,12 +25,26 @@ RectanglePacker::RectanglePacker(int width, int height) {
         spaces.push_back(Rectangle { 0, 0, width, height });
 }
 
+void RectanglePacker::expand(int width, int height) {
+    if (width > 0 && height > 0) {
+        int oldWidth = 0, oldHeight = 0;
+        for (const Rectangle &space : spaces) {
+            if (space.x+space.w > oldWidth)
+                oldWidth = space.x+space.w;
+            if (space.y+space.h > oldHeight)
+                oldHeight = space.y+space.h;
+        }
+        spaces.push_back(Rectangle { 0, 0, width, height });
+        splitSpace(int(spaces.size()-1), oldWidth, oldHeight);
+    }
+}
+
 void RectanglePacker::splitSpace(int index, int w, int h) {
     Rectangle space = spaces[index];
     removeFromUnorderedVector(spaces, index);
     Rectangle a = { space.x, space.y+h, w, space.h-h };
     Rectangle b = { space.x+w, space.y, space.w-w, h };
-    if (w*(space.h-h) <= h*(space.w-w))
+    if (w*(space.h-h) < h*(space.w-w))
         a.w = space.w;
     else
         b.h = space.h;

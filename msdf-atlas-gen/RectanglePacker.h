@@ -12,6 +12,8 @@ class RectanglePacker {
 public:
     RectanglePacker();
     RectanglePacker(int width, int height);
+    /// Expands the packing area - both width and height must be greater or equal to the previous value
+    void expand(int width, int height);
     /// Packs the rectangle array, returns how many didn't fit (0 on success)
     int pack(Rectangle *rectangles, int count);
     int pack(OrientedRectangle *rectangles, int count);
