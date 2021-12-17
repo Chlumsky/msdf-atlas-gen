@@ -34,7 +34,7 @@ Notes:
 
 This project can be used either as a library or as a standalone console program.
 To start using the program immediately, there is a Windows binary available for download in the ["Releases" section](https://github.com/Chlumsky/msdf-atlas-gen/releases).
-To build the project, you may use the included [Visual Studio solution](msdf-atlas-gen.sln) or the [Unix Makefile](Makefile).
+To build the project, you may use the included [Visual Studio solution](msdf-atlas-gen.sln) or the [CMake script](CMakeLists.txt). Examples of how to use it as a library are available [at the bottom](#library-usage-examples).
 
 ## Command line arguments
 
@@ -140,3 +140,114 @@ It must be written on a separate line:
 ### Glyph set specification
 
 The syntax of the glyph set specification is mostly the same as that of a character set, but only numeric values (decimal and hexadecimal) are allowed.
+
+## Library usage examples
+
+Here are commented snippets of code that demonstrate how the project can be used as a library.
+
+### Generating whole atlas at once
+
+```c++
+#include <msdf-atlas-gen/msdf-atlas-gen.h>
+
+using namespace msdf_atlas;
+
+bool generateAtlas(const char *fontFilename) {
+    bool success = false;
+    // Initialize instance of FreeType library
+    if (msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype()) {
+        // Load font file
+        if (msdfgen::FontHandle *font = msdfgen::loadFont(ft, fontFilename)) {
+            // Storage for glyph geometry and their coordinates in the atlas
+            std::vector<GlyphGeometry> glyphs;
+            // FontGeometry is a helper class that loads a set of glyphs from a single font.
+            // It can also be used to get additional font metrics, kerning information, etc.
+            FontGeometry fontGeometry(&glyphs);
+            // Load a set of character glyphs:
+            // The second argument can be ignored unless you mix different font sizes in one atlas.
+            // In the last argument, you can specify a charset other than ASCII.
+            // To load specific glyph indices, use loadGlyphs instead.
+            fontGeometry.loadCharset(font, 1.0, Charset::ASCII);
+            // Apply MSDF edge coloring. See edge-coloring.h for other coloring strategies.
+            const double maxCornerAngle = 3.0;
+            for (GlyphGeometry &glyph : glyphs)
+                glyph.edgeColoring(&msdfgen::edgeColoringInkTrap, maxCornerAngle, 0);
+            // TightAtlasPacker class computes the layout of the atlas.
+            TightAtlasPacker packer;
+            // Set atlas parameters:
+            // setDimensions or setDimensionsConstraint to find the best value
+            packer.setDimensionsConstraint(TightAtlasPacker::DimensionsConstraint::SQUARE);
+            // setScale for a fixed size or setMinimumScale to use the largest that fits
+            packer.setMinimumScale(24.0);
+            // setPixelRange or setUnitRange
+            packer.setPixelRange(2.0);
+            packer.setMiterLimit(1.0);
+            // Compute atlas layout - pack glyphs
+            packer.pack(glyphs.data(), glyphs.size());
+            // Get final atlas dimensions
+            int width = 0, height = 0;
+            packer.getDimensions(width, height);
+            // The ImmediateAtlasGenerator class facilitates the generation of the atlas bitmap.
+            ImmediateAtlasGenerator<
+                float, // pixel type of buffer for individual glyphs depends on generator function
+                3, // number of atlas color channels
+                &msdfGenerator, // function to generate bitmaps for individual glyphs
+                BitmapAtlasStorage<byte, 3> // class that stores the atlas bitmap
+                // For example, a custom atlas storage class that stores it in VRAM can be used.
+            > generator(width, height);
+            // GeneratorAttributes can be modified to change the generator's default settings.
+            GeneratorAttributes attributes;
+            generator.setAttributes(attributes);
+            generator.setThreadCount(4);
+            // Generate atlas bitmap
+            generator.generate(glyphs.data(), glyphs.size());
+            // The atlas bitmap can now be retrieved via atlasStorage as a BitmapConstRef.
+            // The glyphs array (or fontGeometry) contains positioning data for typesetting text.
+            success = myProject::submitAtlasBitmapAndLayout(generator.atlasStorage(), glyphs);
+            // Cleanup
+            msdfgen::destroyFont(font);
+        }
+        msdfgen::deinitializeFreetype(ft);
+    }
+    return success;
+}
+```
+
+### Dynamic atlas
+
+The `DynamicAtlas` class allows you to add glyphs to the atlas "on-the-fly" as they are needed. In this example, the `ImmediateAtlasGenerator` is used as the underlying atlas generator, which however isn't ideal for this purpose because it may launch new threads every time. In practice, you would typically define your own atlas generator class that properly handles your specific performance and synchronization requirements.
+
+Acquiring the `GlyphGeometry` objects can be adapted from the previous example.
+
+```c++
+#include <msdf-atlas-gen/msdf-atlas-gen.h>
+
+using namespace msdf_atlas;
+
+using MyDynamicAtlas = DynamicAtlas<ImmediateAtlasGenerator<float, 3, &msdfGenerator, BitmapAtlasStorage<byte, 3>>>;
+
+const double pixelRange = 2.0;
+const double glyphScale = 32.0;
+const double miterLimit = 1.0;
+const double maxCornerAngle = 3.0;
+
+MyDynamicAtlas atlas;
+
+void addGlyphsToAtlas(GlyphGeometry *glyphs, int count) {
+    for (int i = 0; i < count; ++i) {
+        // Apply MSDF edge coloring. See edge-coloring.h for other coloring strategies.
+        glyphs[i].edgeColoring(&msdfgen::edgeColoringInkTrap, maxCornerAngle, 0);
+        // Finalize glyph box size based on the parameters
+        glyphs[i].wrapBox(glyphScale, pixelRange/glyphScale, miterLimit);
+    }
+    // Add glyphs to atlas - invokes the underlying atlas generator
+    // Adding multiple glyphs at once may improve packing efficiency.
+    MyDynamicAtlas::ChangeFlags change = atlas.add(glyphs, count);
+    if (change&MyDynamicAtlas::RESIZED) {
+        // Atlas has been enlarged - can be handled here or directly in custom generator class
+    }
+    // Glyph positioning data is now stored in glyphs.
+}
+```
+
+The atlas storage (and its bitmap) can be accessed as `dynamicAtlas.atlasGenerator().atlasStorage()`.
