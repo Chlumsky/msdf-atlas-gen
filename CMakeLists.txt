@@ -36,7 +36,7 @@ if (MSVC)
     target_compile_definitions(msdf-atlas-gen PUBLIC _CRT_SECURE_NO_WARNINGS)
 endif()
 target_compile_features(msdf-atlas-gen PUBLIC cxx_std_11)
-target_link_libraries(msdf-atlas-gen PUBLIC Threads::Threads msdfgen::msdfgen msdfgen::msdfgen-ext)
+target_link_libraries(msdf-atlas-gen PUBLIC Threads::Threads msdfgen::msdfgen-core msdfgen::msdfgen-ext)
 
 # TODO make these public in msdfgen so that this doesn't have to be repeated here
 if(FREETYPE_WITH_PNG)
