@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(msdf-atlas-gen VERSION 1.2 LANGUAGES CXX)
 option(MSDF_ATLAS_GEN_BUILD_STANDALONE "Build the msdf-atlas-gen standalone executable" ON)
-set(MSDFGEN_BUILD_MSDFGEN_STANDALONE OFF CACHE BOOL "Build the msdfgen standalone executable")
+set(MSDFGEN_BUILD_STANDALONE OFF CACHE BOOL "Build the msdfgen standalone executable")
 set(MSDFGEN_USE_OPENMP OFF CACHE INTERNAL "Build with OpenMP support for multithreaded code (disabled for atlas gen)" FORCE)
 set(MSDFGEN_USE_CPP11 ON CACHE INTERNAL "Build with C++11 enabled (always enabled for atlas gen)" FORCE)
 set(MSDFGEN_INSTALL OFF CACHE BOOL "Generate installation target for msdfgen")
