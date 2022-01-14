@@ -18,3 +18,4 @@ bin/*.lib
 output.png
 out/
 build/
+/cmake-gen.bat
