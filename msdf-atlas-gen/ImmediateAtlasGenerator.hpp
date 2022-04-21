@@ -30,13 +30,16 @@ void ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::generate(const GlyphGe
         threadAttributes[i].config.errorCorrection.buffer = errorCorrectionBuffer.data()+i*maxBoxArea;
     }
 
-    Workload([this, glyphs, &threadAttributes, threadBufferSize](int i, int threadNo) -> bool {
+    // necessary for it to be captured or else weird error
+    auto foo = GEN_FN;
+
+    Workload([this, foo, glyphs, &threadAttributes, threadBufferSize](int i, int threadNo) -> bool {
         const GlyphGeometry &glyph = glyphs[i];
         if (!glyph.isWhitespace()) {
             int l, b, w, h;
             glyph.getBoxRect(l, b, w, h);
             msdfgen::BitmapRef<T, N> glyphBitmap(glyphBuffer.data()+threadNo*threadBufferSize, w, h);
-            GEN_FN(glyphBitmap, glyph, threadAttributes[threadNo]);
+            foo(glyphBitmap, glyph, threadAttributes[threadNo]);
             storage.put(l, b, msdfgen::BitmapConstRef<T, N>(glyphBitmap));
         }
         return true;
