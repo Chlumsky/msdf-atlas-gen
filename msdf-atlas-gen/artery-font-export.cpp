@@ -58,11 +58,12 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
     artery_font::StdArteryFont<REAL> arfont = { };
     arfont.metadataFormat = artery_font::METADATA_NONE;
 
+    arfont.variants = artery_font::StdList<typename artery_font::StdArteryFont<REAL>::Variant>(fontCount);
     for (int i = 0; i < fontCount; ++i) {
         const FontGeometry &font = fonts[i];
         GlyphIdentifierType identifierType = font.getPreferredIdentifierType();
         const msdfgen::FontMetrics &fontMetrics = font.getMetrics();
-        artery_font::StdFontVariant<REAL> fontVariant = { };
+        typename artery_font::StdArteryFont<REAL>::Variant &fontVariant = arfont.variants[i] = typename artery_font::StdArteryFont<REAL>::Variant();
         fontVariant.codepointType = convertCodepointType(identifierType);
         fontVariant.imageType = convertImageType(properties.imageType);
         fontVariant.metrics.fontSize = REAL(properties.fontSize*fontMetrics.emSize);
@@ -76,7 +77,7 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
         fontVariant.metrics.underlineThickness = REAL(fontMetrics.underlineThickness);
         const char *name = font.getName();
         if (name)
-            fontVariant.name.string = name;
+            (std::string &) fontVariant.name = name;
         fontVariant.glyphs = artery_font::StdList<artery_font::Glyph<REAL> >(font.getGlyphs().size());
         int j = 0;
         for (const GlyphGeometry &glyphGeom : font.getGlyphs()) {
@@ -104,7 +105,7 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
                     kernPair.codepoint1 = elem.first.first;
                     kernPair.codepoint2 = elem.first.second;
                     kernPair.advance.h = REAL(elem.second);
-                    fontVariant.kernPairs.vector.push_back((artery_font::KernPair<REAL> &&) kernPair);
+                    ((std::vector<artery_font::KernPair<REAL> > &) fontVariant.kernPairs).push_back((artery_font::KernPair<REAL> &&) kernPair);
                 }
                 break;
             case GlyphIdentifierType::UNICODE_CODEPOINT:
@@ -116,16 +117,16 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
                         kernPair.codepoint1 = glyph1->getCodepoint();
                         kernPair.codepoint2 = glyph2->getCodepoint();
                         kernPair.advance.h = REAL(elem.second);
-                        fontVariant.kernPairs.vector.push_back((artery_font::KernPair<REAL> &&) kernPair);
+                        ((std::vector<artery_font::KernPair<REAL> > &) fontVariant.kernPairs).push_back((artery_font::KernPair<REAL> &&) kernPair);
                     }
                 }
                 break;
         }
-        arfont.variants.vector.push_back((artery_font::StdFontVariant<REAL> &&) fontVariant);
     }
 
+    arfont.images = artery_font::StdList<typename artery_font::StdArteryFont<REAL>::Image>(1);
     {
-        artery_font::StdImage image = { };
+        typename artery_font::StdArteryFont<REAL>::Image &image = arfont.images[0] = typename artery_font::StdArteryFont<REAL>::Image();
         image.width = atlas.width;
         image.height = atlas.height;
         image.channels = N;
@@ -134,13 +135,13 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
             case ImageFormat::PNG:
                 image.encoding = artery_font::IMAGE_PNG;
                 image.pixelFormat = artery_font::PIXEL_UNSIGNED8;
-                if (!encodePng(image.data.vector, atlas))
+                if (!encodePng((std::vector<byte> &) image.data, atlas))
                     return false;
                 break;
             case ImageFormat::TIFF:
                 image.encoding = artery_font::IMAGE_TIFF;
                 image.pixelFormat = artery_font::PIXEL_FLOAT32;
-                if (!encodeTiff(image.data.vector, atlas))
+                if (!encodeTiff((std::vector<byte> &) image.data, atlas))
                     return false;
                 break;
             case ImageFormat::BINARY:
@@ -174,7 +175,6 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
             default:
                 return false;
         }
-        arfont.images.vector.push_back((artery_font::StdImage &&) image);
     }
 
     return artery_font::writeFile(arfont, filename);

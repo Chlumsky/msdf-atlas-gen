@@ -1,10 +1,15 @@
-Debug/
-Release/
-Debug Library/
-Release Library/
-x86/
-x64/
+/build/
+/Debug/
+/Release/
+/Debug Library/
+/Release Library/
+/x86/
+/x64/
+.vs/
+.vscode/
+.DS_Store
 *.exe
+*.zip
 *.user
 *.sdf
 *.pdb
@@ -13,9 +18,8 @@ x64/
 *.suo
 *.VC.opendb
 *.VC.db
-bin/msdf-atlas-gen
-bin/*.lib
+/bin/*.lib
+/bin/msdf-atlas-gen
 output.png
 out/
-build/
 /cmake-gen.bat

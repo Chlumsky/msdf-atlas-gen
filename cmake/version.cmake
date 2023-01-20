@@ -1,0 +1,19 @@
+
+# This script reads version from vcpkg.json and sets it to ${MSDF_ATLAS_VERSION} etc.
+
+cmake_minimum_required(VERSION 3.15)
+
+file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/../vcpkg.json" MSDF_ATLAS_VCPKG_JSON)
+
+string(REGEX MATCH "\"version\"[ \t\n\r]*:[ \t\n\r]*\"[^\"]*\"" MSDF_ATLAS_TMP_VERSION_PAIR ${MSDF_ATLAS_VCPKG_JSON})
+string(REGEX REPLACE "\"version\"[ \t\n\r]*:[ \t\n\r]*\"([^\"]*)\"" "\\1" MSDF_ATLAS_VERSION ${MSDF_ATLAS_TMP_VERSION_PAIR})
+string(REGEX REPLACE "^([0-9]*)\\.([0-9]*)\\.([0-9]*)" "\\1" MSDF_ATLAS_VERSION_MAJOR ${MSDF_ATLAS_VERSION})
+string(REGEX REPLACE "^([0-9]*)\\.([0-9]*)\\.([0-9]*)" "\\2" MSDF_ATLAS_VERSION_MINOR ${MSDF_ATLAS_VERSION})
+string(REGEX REPLACE "^([0-9]*)\\.([0-9]*)\\.([0-9]*)" "\\3" MSDF_ATLAS_VERSION_REVISION ${MSDF_ATLAS_VERSION})
+string(LENGTH ${MSDF_ATLAS_VERSION} MSDF_ATLAS_VERSION_LENGTH)
+string(REPEAT "-" ${MSDF_ATLAS_VERSION_LENGTH} MSDF_ATLAS_VERSION_UNDERLINE)
+string(TIMESTAMP MSDF_ATLAS_COPYRIGHT_YEAR "%Y")
+
+unset(MSDF_ATLAS_TMP_VERSION_PAIR)
+unset(MSDF_ATLAS_VERSION_LENGTH)
+unset(MSDF_ATLAS_VCPKG_JSON)

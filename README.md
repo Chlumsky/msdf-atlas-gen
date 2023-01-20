@@ -33,8 +33,11 @@ Notes:
 ## Getting started
 
 This project can be used either as a library or as a standalone console program.
+Examples of how to use it as a library are available at the [bottom of the page](#library-usage-examples).
 To start using the program immediately, there is a Windows binary available for download in the ["Releases" section](https://github.com/Chlumsky/msdf-atlas-gen/releases).
-To build the project, you may use the included [Visual Studio solution](msdf-atlas-gen.sln) or the [CMake script](CMakeLists.txt). Examples of how to use it as a library are available [at the bottom](#library-usage-examples).
+To build the project from source, you may use the included [CMake script](CMakeLists.txt).
+In its default configuration, it requires [vcpkg](https://vcpkg.io/) as the provider for third-party library dependencies.
+If you set the environment variable `VCPKG_ROOT` to the vcpkg directory, the CMake configuration will take care of fetching all required packages from vcpkg.
 
 ## Command line arguments
 

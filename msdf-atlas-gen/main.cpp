@@ -1,9 +1,8 @@
 
 /*
-* MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR v1.2 (2021-05-29) - standalone console program
-* --------------------------------------------------------------------------------------------------
-* A utility by Viktor Chlumsky, (c) 2020 - 2021
-*
+* MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR - standalone console program
+* --------------------------------------------------------------------------------
+* A utility by Viktor Chlumsky, (c) 2020 - 2023
 */
 
 #ifdef MSDF_ATLAS_STANDALONE
@@ -29,6 +28,16 @@ using namespace msdf_atlas;
 #define LCG_MULTIPLIER 6364136223846793005ull
 #define LCG_INCREMENT 1442695040888963407ull
 
+#define STRINGIZE_(x) #x
+#define STRINGIZE(x) STRINGIZE_(x)
+#define MSDF_ATLAS_VERSION_STRING STRINGIZE(MSDF_ATLAS_VERSION)
+#define MSDFGEN_VERSION_STRING STRINGIZE(MSDFGEN_VERSION)
+#ifdef MSDF_ATLAS_VERSION_UNDERLINE
+    #define VERSION_UNDERLINE STRINGIZE(MSDF_ATLAS_VERSION_UNDERLINE)
+#else
+    #define VERSION_UNDERLINE "--------"
+#endif
+
 #ifdef MSDFGEN_USE_SKIA
     #define TITLE_SUFFIX    " & Skia"
     #define EXTRA_UNDERLINE "-------"
@@ -38,8 +47,8 @@ using namespace msdf_atlas;
 #endif
 
 static const char * const helpText = R"(
-MSDF Atlas Generator by Viktor Chlumsky v)" MSDF_ATLAS_VERSION R"( (with MSDFGEN v)" MSDFGEN_VERSION TITLE_SUFFIX R"()
-----------------------------------------------------------------)" EXTRA_UNDERLINE R"(
+MSDF Atlas Generator by Viktor Chlumsky v)" MSDF_ATLAS_VERSION_STRING R"( (with MSDFgen v)" MSDFGEN_VERSION_STRING TITLE_SUFFIX R"()
+----------------------------------------------------------------)" VERSION_UNDERLINE EXTRA_UNDERLINE R"(
 
 INPUT SPECIFICATION
   -font <filename.ttf/otf>
