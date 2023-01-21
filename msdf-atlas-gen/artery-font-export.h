@@ -1,6 +1,8 @@
 
 #pragma once
 
+#ifndef MSDF_ATLAS_NO_ARTERY_FONT
+
 #include <msdfgen.h>
 #include <msdfgen-ext.h>
 #include "types.h"
@@ -21,3 +23,5 @@ template <typename REAL, typename T, int N>
 bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<T, N> &atlas, const char *filename, const ArteryFontExportProperties &properties);
 
 }
+
+#endif

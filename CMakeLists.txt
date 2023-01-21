@@ -5,6 +5,7 @@ include(cmake/version.cmake)
 option(MSDF_ATLAS_BUILD_STANDALONE "Build the msdf-atlas-gen standalone executable" ON)
 option(MSDF_ATLAS_USE_VCPKG "Use vcpkg package manager to link project dependencies" ON)
 option(MSDF_ATLAS_USE_SKIA "Build with the Skia library" ON)
+option(MSDF_ATLAS_NO_ARTERY_FONT "Disable Artery Font export and do not require its submodule" OFF)
 option(MSDF_ATLAS_MSDFGEN_EXTERNAL "Do not build the msdfgen submodule but find it as an external package" OFF)
 option(MSDF_ATLAS_INSTALL "Generate installation target" OFF)
 option(MSDF_ATLAS_DYNAMIC_RUNTIME "Link dynamic runtime library instead of static" OFF)
@@ -100,13 +101,15 @@ target_compile_definitions(msdf-atlas-gen PUBLIC
     MSDF_ATLAS_VERSION_REVISION=${MSDF_ATLAS_VERSION_REVISION}
     MSDF_ATLAS_COPYRIGHT_YEAR=${MSDF_ATLAS_COPYRIGHT_YEAR}
 )
-target_include_directories(msdf-atlas-gen
-    INTERFACE
-        $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/artery-font-format
+target_include_directories(msdf-atlas-gen INTERFACE
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
+if(MSDF_ATLAS_NO_ARTERY_FONT)
+    target_compile_definitions(msdf-atlas-gen PUBLIC MSDF_ATLAS_NO_ARTERY_FONT)
+else()
+    target_include_directories(msdf-atlas-gen PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/artery-font-format)
+endif()
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT msdf-atlas-gen)
 
 target_compile_features(msdf-atlas-gen PUBLIC cxx_std_11)

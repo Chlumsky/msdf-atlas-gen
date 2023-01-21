@@ -1,6 +1,8 @@
 
 #include "artery-font-export.h"
 
+#ifndef MSDF_ATLAS_NO_ARTERY_FONT
+
 #include <artery-font/std-artery-font.h>
 #include <artery-font/stdio-serialization.h>
 #include "GlyphGeometry.h"
@@ -188,3 +190,5 @@ template bool exportArteryFont<float>(const FontGeometry *fonts, int fontCount, 
 template bool exportArteryFont<float>(const FontGeometry *fonts, int fontCount, const msdfgen::BitmapConstRef<float, 4> &atlas, const char *filename, const ArteryFontExportProperties &properties);
 
 }
+
+#endif

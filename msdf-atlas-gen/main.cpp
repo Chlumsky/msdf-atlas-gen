@@ -46,6 +46,11 @@ using namespace msdf_atlas;
     #define EXTRA_UNDERLINE
 #endif
 
+static const char * const versionText =
+    "MSDF-Atlas-Gen v" MSDF_ATLAS_VERSION_STRING "\n"
+    "  with MSDFgen v" MSDFGEN_VERSION_STRING TITLE_SUFFIX "\n"
+    "(c) 2020 - " STRINGIZE(MSDF_ATLAS_COPYRIGHT_YEAR) " Viktor Chlumsky";
+
 static const char * const helpText = R"(
 MSDF Atlas Generator by Viktor Chlumsky v)" MSDF_ATLAS_VERSION_STRING R"( (with MSDFgen v)" MSDFGEN_VERSION_STRING TITLE_SUFFIX R"()
 ----------------------------------------------------------------)" VERSION_UNDERLINE EXTRA_UNDERLINE R"(
@@ -85,9 +90,13 @@ OUTPUT SPECIFICATION - one or more can be specified
   -json <filename.json>
       Writes the atlas's layout data, as well as other metrics into a structured JSON file.
   -csv <filename.csv>
-      Writes the layout data of the glyphs into a simple CSV file.
+      Writes the layout data of the glyphs into a simple CSV file.)"
+#ifndef MSDF_ATLAS_NO_ARTERY_FONT
+R"(
   -arfont <filename.arfont>
-      Stores the atlas and its layout data as an Artery Font file. Supported formats: png, bin, binfloat.
+      Stores the atlas and its layout data as an Artery Font file. Supported formats: png, bin, binfloat.)"
+#endif
+R"(
   -shadronpreview <filename.shadron> <sample text>
       Generates a Shadron script that uses the generated atlas to draw a sample text as a preview.
 
@@ -273,6 +282,7 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
         }
     }
 
+#ifndef MSDF_ATLAS_NO_ARTERY_FONT
     if (config.arteryFontFilename) {
         ArteryFontExportProperties arfontProps;
         arfontProps.fontSize = config.emSize;
@@ -287,6 +297,7 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
             puts("Failed to generate Artery Font file.");
         }
     }
+#endif
 
     return success;
 }
@@ -336,6 +347,10 @@ int main(int argc, const char * const *argv) {
     while (argPos < argc) {
         const char *arg = argv[argPos];
         #define ARG_CASE(s, p) if (!strcmp(arg, s) && argPos+(p) < argc)
+
+        // Accept arguments prefixed with -- instead of -
+        if (arg[0] == '-' && arg[1] == '-')
+            ++arg;
 
         ARG_CASE("-type", 1) {
             arg = argv[++argPos];
@@ -427,11 +442,13 @@ int main(int argc, const char * const *argv) {
             ++argPos;
             continue;
         }
+    #ifndef MSDF_ATLAS_NO_ARTERY_FONT
         ARG_CASE("-arfont", 1) {
             config.arteryFontFilename = argv[++argPos];
             ++argPos;
             continue;
         }
+    #endif
         ARG_CASE("-imageout", 1) {
             config.imageFilename = argv[++argPos];
             ++argPos;
@@ -666,11 +683,15 @@ int main(int argc, const char * const *argv) {
             argPos += 2;
             continue;
         }
+        ARG_CASE("-version", 0) {
+            puts(versionText);
+            return 0;
+        }
         ARG_CASE("-help", 0) {
             puts(helpText);
             return 0;
         }
-        printf("Unknown setting or insufficient parameters: %s\n", arg);
+        printf("Unknown setting or insufficient parameters: %s\n", argv[argPos]);
         suggestHelp = true;
         ++argPos;
     }
@@ -765,6 +786,7 @@ int main(int argc, const char * const *argv) {
     }
     if (config.imageType == ImageType::MTSDF && config.imageFormat == ImageFormat::BMP)
         ABORT("Atlas type not compatible with image format. MTSDF requires a format with alpha channel.");
+#ifndef MSDF_ATLAS_NO_ARTERY_FONT
     if (config.arteryFontFilename && !(config.imageFormat == ImageFormat::PNG || config.imageFormat == ImageFormat::BINARY || config.imageFormat == ImageFormat::BINARY_FLOAT)) {
         config.arteryFontFilename = nullptr;
         result = 1;
@@ -774,6 +796,7 @@ int main(int argc, const char * const *argv) {
             return result;
         layoutOnly = !(config.arteryFontFilename || config.imageFilename);
     }
+#endif
     if (imageExtension != ImageFormat::UNSPECIFIED) {
         // Warn if image format mismatches -imageout extension
         bool mismatch = false;
