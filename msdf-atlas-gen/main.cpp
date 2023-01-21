@@ -52,7 +52,9 @@ MSDF Atlas Generator by Viktor Chlumsky v)" MSDF_ATLAS_VERSION_STRING R"( (with 
 
 INPUT SPECIFICATION
   -font <filename.ttf/otf>
-      Specifies the input TrueType / OpenType font file. This is required.
+      Specifies the input TrueType / OpenType font file. A font specification is required.
+  -varfont <filename.ttf/otf?var0=value0&var1=value1>
+      Specifies an input variable font file and configures its variables.
   -charset <filename>
       Specifies the input character set. Refer to the documentation for format of charset specification. Defaults to ASCII.
   -glyphset <filename>
@@ -196,8 +198,32 @@ static bool cmpExtension(const char *path, const char *ext) {
     return true;
 }
 
+static msdfgen::FontHandle * loadVarFont(msdfgen::FreetypeHandle *library, const char *filename) {
+    std::string buffer;
+    while (*filename && *filename != '?')
+        buffer.push_back(*filename++);
+    msdfgen::FontHandle *font = msdfgen::loadFont(library, buffer.c_str());
+    if (font && *filename++ == '?') {
+        do {
+            buffer.clear();
+            while (*filename && *filename != '=')
+                buffer.push_back(*filename++);
+            if (*filename == '=') {
+                double value = 0;
+                int skip = 0;
+                if (sscanf(++filename, "%lf%n", &value, &skip) == 1) {
+                    msdfgen::setFontVariationAxis(library, font, buffer.c_str(), value);
+                    filename += skip;
+                }
+            }
+        } while (*filename++ == '&');
+    }
+    return font;
+}
+
 struct FontInput {
     const char *fontFilename;
+    bool variableFont;
     GlyphIdentifierType glyphIdentifierType;
     const char *charsetFilename;
     double fontScale;
@@ -356,6 +382,13 @@ int main(int argc, const char * const *argv) {
         }
         ARG_CASE("-font", 1) {
             fontInput.fontFilename = argv[++argPos];
+            fontInput.variableFont = false;
+            ++argPos;
+            continue;
+        }
+        ARG_CASE("-varfont", 1) {
+            fontInput.fontFilename = argv[++argPos];
+            fontInput.variableFont = true;
             ++argPos;
             continue;
         }
@@ -783,13 +816,13 @@ int main(int argc, const char * const *argv) {
                     msdfgen::deinitializeFreetype(ft);
                 }
             }
-            bool load(const char *fontFilename) {
+            bool load(const char *fontFilename, bool isVarFont) {
                 if (ft && fontFilename) {
                     if (this->fontFilename && !strcmp(this->fontFilename, fontFilename))
                         return true;
                     if (font)
                         msdfgen::destroyFont(font);
-                    if ((font = msdfgen::loadFont(ft, fontFilename))) {
+                    if ((font = isVarFont ? loadVarFont(ft, fontFilename) : msdfgen::loadFont(ft, fontFilename))) {
                         this->fontFilename = fontFilename;
                         return true;
                     }
@@ -803,7 +836,7 @@ int main(int argc, const char * const *argv) {
         } font;
 
         for (FontInput &fontInput : fontInputs) {
-            if (!font.load(fontInput.fontFilename))
+            if (!font.load(fontInput.fontFilename, fontInput.variableFont))
                 ABORT("Failed to load specified font file.");
             if (fontInput.fontScale <= 0)
                 fontInput.fontScale = 1;
