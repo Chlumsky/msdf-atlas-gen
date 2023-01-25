@@ -77,6 +77,23 @@ static std::string relativizePath(const char *base, const char *target) {
     return output;
 }
 
+static std::string escapeString(const std::string &str) {
+    std::string output;
+    for (int i = 0; i < (int) str.size(); ++i) {
+        switch (str[i]) {
+            case '"':
+                output += "\\\"";
+                break;
+            case '\\':
+                output += "\\\\";
+                break;
+            default:
+                output.push_back(str[i]);
+        }
+    }
+    return output;
+}
+
 bool generateShadronPreview(const FontGeometry *fonts, int fontCount, ImageType atlasType, int atlasWidth, int atlasHeight, double pxRange, const unicode_t *text, const char *imageFilename, bool fullRange, const char *outputFilename) {
     if (fontCount <= 0)
         return false;
@@ -88,7 +105,7 @@ bool generateShadronPreview(const FontGeometry *fonts, int fontCount, ImageType 
         return false;
     fprintf(file, shadronPreviewPreamble, atlasType == ImageType::HARD_MASK || atlasType == ImageType::SOFT_MASK ? shadronFillGlyphMask : shadronFillGlyphSdf);
     if (imageFilename)
-        fprintf(file, "image Atlas = file(\"%s\")", relativizePath(outputFilename, imageFilename).c_str());
+        fprintf(file, "image Atlas = file(\"%s\")", escapeString(relativizePath(outputFilename, imageFilename)).c_str());
     else
         fprintf(file, "image Atlas = file()");
     fprintf(file, " : %sfilter(%s), map(repeat);\n", fullRange ? "full_range(true), " : "", atlasType == ImageType::HARD_MASK ? "nearest" : "linear");

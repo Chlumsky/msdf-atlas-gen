@@ -743,9 +743,9 @@ int main(int argc, const char * const *argv) {
         puts("Neither atlas size nor glyph size selected, using default...");
         minEmSize = MSDF_ATLAS_DEFAULT_EM_SIZE;
     }
-    if (!(config.imageType == ImageType::SDF || config.imageType == ImageType::PSDF || config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF)) {
+    if (config.imageType == ImageType::HARD_MASK || config.imageType == ImageType::SOFT_MASK) {
         rangeMode = RANGE_PIXEL;
-        rangeValue = (double) (config.imageType == ImageType::SOFT_MASK);
+        rangeValue = 1;
     } else if (rangeValue <= 0) {
         rangeMode = RANGE_PIXEL;
         rangeValue = DEFAULT_PIXEL_RANGE;

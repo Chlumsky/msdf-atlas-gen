@@ -7,6 +7,9 @@
 - CMake configuration overhaul, added installation configuration
 - Switched to libpng as the primary PNG file encoder
 - Added `-varfont` option to configure variables of variable fonts
+- Added `-version` option to print program version
+- Arguments with double dash (e.g. `--font`) now also accepted
+- Minor fix to positioning for `-type hardmask`
 
 ### Version 1.2.2 (2021-09-06)
 
