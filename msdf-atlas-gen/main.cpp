@@ -83,6 +83,16 @@ ATLAS CONFIGURATION
   -pots / -potr / -square / -square2 / -square4
       Picks the minimum atlas dimensions that fit all glyphs and satisfy the selected constraint:
       power of two square / ... rectangle / any square / square with side divisible by 2 / ... 4
+  -uniformgrid
+      Lays out the atlas into a uniform grid. Enables following options starting with -uniform:
+    -uniformcols <N>
+        Sets the number of grid columns.
+    -uniformcell <width> <height>
+        Sets fixed dimensions of the grid's cells.
+    -uniformcellconstraint <none / pots / potr / square / square2 / square4>
+        Constrains cell dimensions to the given rule (see -pots / ... above)
+    -uniformorigin <yes / no / horizontal / vertical>
+        Sets whether the glyph's origin point should be fixed at the same position in each cell
   -yorigin <bottom / top>
       Determines whether the Y-axis is oriented upwards (bottom origin, default) or downwards (top origin).
 
@@ -103,12 +113,12 @@ R"(
       Generates a Shadron script that uses the generated atlas to draw a sample text as a preview.
 
 GLYPH CONFIGURATION
-  -size <EM size>
-      Specifies the size of the glyphs in the atlas bitmap in pixels per EM.
-  -minsize <EM size>
+  -size <em size>
+      Specifies the size of the glyphs in the atlas bitmap in pixels per em.
+  -minsize <em size>
       Specifies the minimum size. The largest possible size that fits the same atlas dimensions will be used.
-  -emrange <EM range>
-      Specifies the SDF distance range in EM's.
+  -emrange <em range>
+      Specifies the SDF distance range in em's.
   -pxrange <pixel range>
       Specifies the SDF distance range in output pixels. The default value is 2.
   -pxalign <on / off / horizontal / vertical>
@@ -253,6 +263,11 @@ struct Configuration {
     double angleThreshold;
     double miterLimit;
     bool alignOriginX, alignOriginY;
+    struct {
+        int cellWidth, cellHeight;
+        int cols, rows;
+        bool hFixed, vFixed;
+    } grid;
     void (*edgeColoring)(msdfgen::Shape &, double, unsigned long long);
     bool expensiveColoring;
     unsigned long long coloringSeed;
@@ -319,10 +334,12 @@ int main(int argc, const char * const *argv) {
     config.imageType = ImageType::MSDF;
     config.imageFormat = ImageFormat::UNSPECIFIED;
     config.yDirection = YDirection::BOTTOM_UP;
+    config.grid.vFixed = true;
     config.edgeColoring = msdfgen::edgeColoringInkTrap;
     config.kerning = true;
     const char *imageFormatName = nullptr;
     int fixedWidth = -1, fixedHeight = -1;
+    int fixedCellWidth = -1, fixedCellHeight = -1;
     config.preprocessGeometry = (
         #ifdef MSDFGEN_USE_SKIA
             true
@@ -334,13 +351,15 @@ int main(int argc, const char * const *argv) {
     config.generatorAttributes.scanlinePass = !config.preprocessGeometry;
     double minEmSize = 0;
     enum {
-        /// Range specified in EMs
+        /// Range specified in ems
         RANGE_EM,
         /// Range specified in output pixels
         RANGE_PIXEL,
     } rangeMode = RANGE_PIXEL;
     double rangeValue = 0;
-    TightAtlasPacker::DimensionsConstraint atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
+    PackingStyle packingStyle = PackingStyle::TIGHT;
+    DimensionsConstraint atlasSizeConstraint = DimensionsConstraint::NONE;
+    DimensionsConstraint cellSizeConstraint = DimensionsConstraint::NONE;
     config.angleThreshold = DEFAULT_ANGLE_THRESHOLD;
     config.miterLimit = DEFAULT_MITER_LIMIT;
     config.alignOriginX = false, config.alignOriginY = true;
@@ -491,31 +510,31 @@ int main(int argc, const char * const *argv) {
             continue;
         }
         ARG_CASE("-pots", 0) {
-            atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::POWER_OF_TWO_SQUARE;
+            atlasSizeConstraint = DimensionsConstraint::POWER_OF_TWO_SQUARE;
             fixedWidth = -1, fixedHeight = -1;
             ++argPos;
             continue;
         }
         ARG_CASE("-potr", 0) {
-            atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::POWER_OF_TWO_RECTANGLE;
+            atlasSizeConstraint = DimensionsConstraint::POWER_OF_TWO_RECTANGLE;
             fixedWidth = -1, fixedHeight = -1;
             ++argPos;
             continue;
         }
         ARG_CASE("-square", 0) {
-            atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::SQUARE;
+            atlasSizeConstraint = DimensionsConstraint::SQUARE;
             fixedWidth = -1, fixedHeight = -1;
             ++argPos;
             continue;
         }
         ARG_CASE("-square2", 0) {
-            atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::EVEN_SQUARE;
+            atlasSizeConstraint = DimensionsConstraint::EVEN_SQUARE;
             fixedWidth = -1, fixedHeight = -1;
             ++argPos;
             continue;
         }
         ARG_CASE("-square4", 0) {
-            atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
+            atlasSizeConstraint = DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
             fixedWidth = -1, fixedHeight = -1;
             ++argPos;
             continue;
@@ -534,7 +553,7 @@ int main(int argc, const char * const *argv) {
         ARG_CASE("-size", 1) {
             double s;
             if (!(parseDouble(s, argv[++argPos]) && s > 0))
-                ABORT("Invalid EM size argument. Use -size <EM size> with a positive real number.");
+                ABORT("Invalid em size argument. Use -size <em size> with a positive real number.");
             config.emSize = s;
             ++argPos;
             continue;
@@ -542,7 +561,7 @@ int main(int argc, const char * const *argv) {
         ARG_CASE("-minsize", 1) {
             double s;
             if (!(parseDouble(s, argv[++argPos]) && s > 0))
-                ABORT("Invalid minimum EM size argument. Use -minsize <EM size> with a positive real number.");
+                ABORT("Invalid minimum em size argument. Use -minsize <em size> with a positive real number.");
             minEmSize = s;
             ++argPos;
             continue;
@@ -550,7 +569,7 @@ int main(int argc, const char * const *argv) {
         ARG_CASE("-emrange", 1) {
             double r;
             if (!(parseDouble(r, argv[++argPos]) && r >= 0))
-                ABORT("Invalid range argument. Use -emrange <EM range> with a positive real number.");
+                ABORT("Invalid range argument. Use -emrange <em range> with a positive real number.");
             rangeMode = RANGE_EM;
             rangeValue = r;
             ++argPos;
@@ -584,6 +603,63 @@ int main(int argc, const char * const *argv) {
             if (!parseAngle(at, argv[argPos+1]))
                 ABORT("Invalid angle threshold. Use -angle <min angle> with a positive real number less than PI or a value in degrees followed by 'd' below 180d.");
             config.angleThreshold = at;
+            argPos += 2;
+            continue;
+        }
+        ARG_CASE("-uniformgrid", 0) {
+            packingStyle = PackingStyle::GRID;
+            ++argPos;
+            continue;
+        }
+        ARG_CASE("-uniformcols", 1) {
+            packingStyle = PackingStyle::GRID;
+            unsigned c;
+            if (!(parseUnsigned(c, argv[argPos+1]) && c))
+                ABORT("Invalid number of grid columns. Use -uniformcols <N> with a positive integer.");
+            config.grid.cols = c;
+            argPos += 2;
+            continue;
+        }
+        ARG_CASE("-uniformcell", 2) {
+            packingStyle = PackingStyle::GRID;
+            unsigned w, h;
+            if (!(parseUnsigned(w, argv[argPos+1]) && parseUnsigned(h, argv[argPos+2]) && w && h))
+                ABORT("Invalid cell dimensions. Use -uniformcell <width> <height> with two positive integers.");
+            fixedCellWidth = w, fixedCellHeight = h;
+            argPos += 3;
+            continue;
+        }
+        ARG_CASE("-uniformcellconstraint", 1) {
+            packingStyle = PackingStyle::GRID;
+            if (!strcmp(argv[argPos+1], "none") || !strcmp(argv[argPos+1], "rect"))
+                cellSizeConstraint = DimensionsConstraint::NONE;
+            else if (!strcmp(argv[argPos+1], "pots"))
+                cellSizeConstraint = DimensionsConstraint::POWER_OF_TWO_SQUARE;
+            else if (!strcmp(argv[argPos+1], "potr"))
+                cellSizeConstraint = DimensionsConstraint::POWER_OF_TWO_RECTANGLE;
+            else if (!strcmp(argv[argPos+1], "square"))
+                cellSizeConstraint = DimensionsConstraint::SQUARE;
+            else if (!strcmp(argv[argPos+1], "square2"))
+                cellSizeConstraint = DimensionsConstraint::EVEN_SQUARE;
+            else if (!strcmp(argv[argPos+1], "square4"))
+                cellSizeConstraint = DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
+            else
+                ABORT("Unknown dimensions constaint. Use -uniformcellconstraint with one of: none, pots, potr, square, square2, or square4.");
+            argPos += 2;
+            continue;
+        }
+        ARG_CASE("-uniformorigin", 1) {
+            packingStyle = PackingStyle::GRID;
+            if (!strcmp(argv[argPos+1], "no") || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "none") || !strcmp(argv[argPos+1], "false") || !strcmp(argv[argPos+1], "disabled"))
+                config.grid.hFixed = false, config.grid.vFixed = false;
+            else if (!strcmp(argv[argPos+1], "yes") || !strcmp(argv[argPos+1], "1") || !strcmp(argv[argPos+1], "both") || !strcmp(argv[argPos+1], "true") || !strcmp(argv[argPos+1], "enabled"))
+                config.grid.hFixed = true, config.grid.vFixed = true;
+            else if (!strcmp(argv[argPos+1], "horizontal") || !strcmp(argv[argPos+1], "h"))
+                config.grid.hFixed = true, config.grid.vFixed = false;
+            else if (!strcmp(argv[argPos+1], "vertical") || !strcmp(argv[argPos+1], "v") || !strcmp(argv[argPos+1], "default"))
+                config.grid.hFixed = false, config.grid.vFixed = true;
+            else
+                ABORT("Unknown option for -uniformorigin. Use one of: yes, no, horizontal, vertical.");
             argPos += 2;
             continue;
         }
@@ -762,11 +838,13 @@ int main(int argc, const char * const *argv) {
         fontInputs.push_back(fontInput);
 
     // Fix up configuration based on related values
+    if (packingStyle == PackingStyle::TIGHT && atlasSizeConstraint == DimensionsConstraint::NONE)
+        atlasSizeConstraint = DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
     if (!(config.imageType == ImageType::PSDF || config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF))
         config.miterLimit = 0;
     if (config.emSize > minEmSize)
         minEmSize = config.emSize;
-    if (!(fixedWidth > 0 && fixedHeight > 0) && !(minEmSize > 0)) {
+    if (!(fixedWidth > 0 && fixedHeight > 0) && !(fixedCellWidth > 0 && fixedCellHeight > 0) && !(minEmSize > 0)) {
         fputs("Neither atlas size nor glyph size selected, using default...\n", stderr);
         minEmSize = MSDF_ATLAS_DEFAULT_EM_SIZE;
     }
@@ -851,6 +929,9 @@ int main(int argc, const char * const *argv) {
         config.imageFormat == ImageFormat::BINARY_FLOAT ||
         config.imageFormat == ImageFormat::BINARY_FLOAT_BE
     );
+    // TODO: In this case (if padding is -1), the border pixels of each glyph are black, but still computed. For floating-point output, this may play a role.
+    int padding = config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF ? 0 : -1;
+    double uniformOriginX, uniformOriginY;
 
     // Load fonts
     std::vector<GlyphGeometry> glyphs;
@@ -975,38 +1056,108 @@ int main(int argc, const char * const *argv) {
         }
         bool fixedDimensions = fixedWidth >= 0 && fixedHeight >= 0;
         bool fixedScale = config.emSize > 0;
-        TightAtlasPacker atlasPacker;
-        if (fixedDimensions)
-            atlasPacker.setDimensions(fixedWidth, fixedHeight);
-        else
-            atlasPacker.setDimensionsConstraint(atlasSizeConstraint);
-        atlasPacker.setPadding(config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF ? 0 : -1);
-        // TODO: In this case (if padding is -1), the border pixels of each glyph are black, but still computed. For floating-point output, this may play a role.
-        if (fixedScale)
-            atlasPacker.setScale(config.emSize);
-        else
-            atlasPacker.setMinimumScale(minEmSize);
-        atlasPacker.setPixelRange(pxRange);
-        atlasPacker.setUnitRange(unitRange);
-        atlasPacker.setMiterLimit(config.miterLimit);
-        atlasPacker.setOriginAlignment(config.alignOriginX, config.alignOriginY);
-        if (int remaining = atlasPacker.pack(glyphs.data(), glyphs.size())) {
-            if (remaining < 0) {
-                ABORT("Failed to pack glyphs into atlas.");
-            } else {
-                fprintf(stderr, "Error: Could not fit %d out of %d glyphs into the atlas.\n", remaining, (int) glyphs.size());
-                return 1;
+        switch (packingStyle) {
+
+            case PackingStyle::TIGHT: {
+                TightAtlasPacker atlasPacker;
+                if (fixedDimensions)
+                    atlasPacker.setDimensions(fixedWidth, fixedHeight);
+                else
+                    atlasPacker.setDimensionsConstraint(atlasSizeConstraint);
+                atlasPacker.setPadding(padding);
+                if (fixedScale)
+                    atlasPacker.setScale(config.emSize);
+                else
+                    atlasPacker.setMinimumScale(minEmSize);
+                atlasPacker.setPixelRange(pxRange);
+                atlasPacker.setUnitRange(unitRange);
+                atlasPacker.setMiterLimit(config.miterLimit);
+                atlasPacker.setOriginAlignment(config.alignOriginX, config.alignOriginY);
+                if (int remaining = atlasPacker.pack(glyphs.data(), glyphs.size())) {
+                    if (remaining < 0) {
+                        ABORT("Failed to pack glyphs into atlas.");
+                    } else {
+                        fprintf(stderr, "Error: Could not fit %d out of %d glyphs into the atlas.\n", remaining, (int) glyphs.size());
+                        return 1;
+                    }
+                }
+                atlasPacker.getDimensions(config.width, config.height);
+                if (!(config.width > 0 && config.height > 0))
+                    ABORT("Unable to determine atlas size.");
+                config.emSize = atlasPacker.getScale();
+                config.pxRange = atlasPacker.getPixelRange();
+                if (!fixedScale)
+                    printf("Glyph size: %.9g pixels/em\n", config.emSize);
+                if (!fixedDimensions)
+                    printf("Atlas dimensions: %d x %d\n", config.width, config.height);
+                break;
             }
+
+            case PackingStyle::GRID: {
+                GridAtlasPacker atlasPacker;
+                atlasPacker.setFixedOrigin(config.grid.hFixed, config.grid.vFixed);
+                if (fixedCellWidth >= 0 && fixedCellHeight >= 0)
+                    atlasPacker.setCellDimensions(fixedCellWidth, fixedCellHeight);
+                else
+                    atlasPacker.setCellDimensionsConstraint(cellSizeConstraint);
+                if (config.grid.cols > 0)
+                    atlasPacker.setColumns(config.grid.cols);
+                if (fixedDimensions)
+                    atlasPacker.setDimensions(fixedWidth, fixedHeight);
+                else
+                    atlasPacker.setDimensionsConstraint(atlasSizeConstraint);
+                atlasPacker.setPadding(padding);
+                if (fixedScale)
+                    atlasPacker.setScale(config.emSize);
+                else
+                    atlasPacker.setMinimumScale(minEmSize);
+                atlasPacker.setPixelRange(pxRange);
+                atlasPacker.setUnitRange(unitRange);
+                atlasPacker.setMiterLimit(config.miterLimit);
+                //atlasPacker.setOriginAlignment(config.alignOriginX, config.alignOriginY);
+                if (int remaining = atlasPacker.pack(glyphs.data(), glyphs.size())) {
+                    if (remaining < 0) {
+                        ABORT("Failed to pack glyphs into atlas.");
+                    } else {
+                        fprintf(stderr, "Error: Could not fit %d out of %d glyphs into the atlas.\n", remaining, (int) glyphs.size());
+                        return 1;
+                    }
+                }
+                atlasPacker.getDimensions(config.width, config.height);
+                if (!(config.width > 0 && config.height > 0))
+                    ABORT("Unable to determine atlas size.");
+                config.emSize = atlasPacker.getScale();
+                config.pxRange = atlasPacker.getPixelRange();
+                atlasPacker.getCellDimensions(config.grid.cellWidth, config.grid.cellHeight);
+                config.grid.cols = atlasPacker.getColumns();
+                config.grid.rows = atlasPacker.getRows();
+                if (!fixedScale)
+                    printf("Glyph size: %.9g pixels/em\n", config.emSize);
+                if (config.grid.hFixed || config.grid.vFixed) {
+                    atlasPacker.getFixedOrigin(uniformOriginX, uniformOriginY);
+                    printf("Grid cell origin: ");
+                    if (config.grid.hFixed)
+                        printf("X = %.9g", uniformOriginX);
+                    if (config.grid.hFixed && config.grid.vFixed)
+                        printf(", ");
+                    if (config.grid.vFixed) {
+                        switch (config.yDirection) {
+                            case YDirection::BOTTOM_UP:
+                                printf("Y = %.9g", uniformOriginY);
+                                break;
+                            case YDirection::TOP_DOWN:
+                                printf("Y = %.9g", (config.grid.cellHeight-padding-1)/config.emSize-uniformOriginY);
+                                break;
+                        }
+                    }
+                    printf("\n");
+                }
+                printf("Grid cell dimensions: %d x %d\n", config.grid.cellWidth, config.grid.cellHeight);
+                printf("Atlas dimensions: %d x %d (%d columns x %d rows)\n", config.width, config.height, config.grid.cols, config.grid.rows);
+                break;
+            }
+
         }
-        atlasPacker.getDimensions(config.width, config.height);
-        if (!(config.width > 0 && config.height > 0))
-            ABORT("Unable to determine atlas size.");
-        config.emSize = atlasPacker.getScale();
-        config.pxRange = atlasPacker.getPixelRange();
-        if (!fixedScale)
-            printf("Glyph size: %.9g pixels/EM\n", config.emSize);
-        if (!fixedDimensions)
-            printf("Atlas dimensions: %d x %d\n", config.width, config.height);
     }
 
     // Generate atlas bitmap
@@ -1075,8 +1226,25 @@ int main(int argc, const char * const *argv) {
             fputs("Failed to write CSV output file.\n", stderr);
         }
     }
+
     if (config.jsonFilename) {
-        if (exportJSON(fonts.data(), fonts.size(), config.emSize, config.pxRange, config.width, config.height, config.imageType, config.yDirection, config.jsonFilename, config.kerning))
+        JsonAtlasMetrics jsonMetrics = { };
+        JsonAtlasMetrics::GridMetrics gridMetrics = { };
+        jsonMetrics.distanceRange = config.pxRange;
+        jsonMetrics.size = config.emSize;
+        jsonMetrics.width = config.width, jsonMetrics.height = config.height;
+        jsonMetrics.yDirection = config.yDirection;
+        if (packingStyle == PackingStyle::GRID) {
+            gridMetrics.cellWidth = config.grid.cellWidth, gridMetrics.cellHeight = config.grid.cellHeight;
+            gridMetrics.columns = config.grid.cols, gridMetrics.rows = config.grid.rows;
+            if (config.grid.hFixed)
+                gridMetrics.originX = &uniformOriginX;
+            if (config.grid.vFixed)
+                gridMetrics.originY = &uniformOriginY;
+            gridMetrics.padding = padding;
+            jsonMetrics.grid = &gridMetrics;
+        }
+        if (exportJSON(fonts.data(), fonts.size(), config.imageType, jsonMetrics, config.jsonFilename, config.kerning))
             fputs("Glyph layout and metadata written into JSON file.\n", stderr);
         else {
             result = 1;

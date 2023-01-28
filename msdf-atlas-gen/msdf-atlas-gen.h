@@ -26,6 +26,7 @@
 #include "AtlasStorage.h"
 #include "BitmapAtlasStorage.h"
 #include "TightAtlasPacker.h"
+#include "GridAtlasPacker.h"
 #include "AtlasGenerator.h"
 #include "ImmediateAtlasGenerator.h"
 #include "DynamicAtlas.h"

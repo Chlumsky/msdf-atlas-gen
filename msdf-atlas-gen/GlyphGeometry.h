@@ -22,6 +22,8 @@ public:
     /// Computes the dimensions of the glyph's box as well as the transformation for the generator function
     void wrapBox(double scale, double range, double miterLimit, bool alignOrigin = false);
     void wrapBox(double scale, double range, double miterLimit, bool alignOriginX, bool alignOriginY);
+    /// Computes the glyph's transformation and alignment (unless specified) for given dimensions
+    void frameBox(double scale, double range, double miterLimit, int width, int height, const double *fixedX, const double *fixedY);
     /// Sets the glyph's box's position in the atlas
     void placeBox(int x, int y);
     /// Sets the glyph's box's rectangle in the atlas
@@ -34,8 +36,12 @@ public:
     unicode_t getCodepoint() const;
     /// Returns the glyph's identifier specified by the supplied identifier type
     int getIdentifier(GlyphIdentifierType type) const;
+    /// Returns the glyph's geometry scale
+    double getGeometryScale() const;
     /// Returns the glyph's shape
     const msdfgen::Shape & getShape() const;
+    /// Returns the glyph's shape's raw bounds
+    const msdfgen::Shape::Bounds & getShapeBounds() const;
     /// Returns the glyph's advance
     double getAdvance() const;
     /// Returns the glyph's box in the atlas

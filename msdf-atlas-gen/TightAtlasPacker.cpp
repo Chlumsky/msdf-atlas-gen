@@ -62,6 +62,7 @@ int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstr
                 dimensions = packRectangles<SquareSizeSelector<2> >(rectangles.data(), rectangles.size(), padding);
                 break;
             case DimensionsConstraint::SQUARE:
+            default:
                 dimensions = packRectangles<SquareSizeSelector<> >(rectangles.data(), rectangles.size(), padding);
                 break;
         }

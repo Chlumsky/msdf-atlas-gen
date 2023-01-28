@@ -49,4 +49,20 @@ enum class YDirection {
     TOP_DOWN
 };
 
+/// The method of computing the layout of the atlas
+enum class PackingStyle {
+    TIGHT,
+    GRID
+};
+
+/// Constraints for the atlas's dimensions - see size selectors for more info
+enum class DimensionsConstraint {
+    NONE,
+    SQUARE,
+    EVEN_SQUARE,
+    MULTIPLE_OF_FOUR_SQUARE,
+    POWER_OF_TWO_RECTANGLE,
+    POWER_OF_TWO_SQUARE
+};
+
 }

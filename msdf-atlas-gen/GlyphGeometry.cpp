@@ -92,6 +92,37 @@ void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool 
     }
 }
 
+void GlyphGeometry::frameBox(double scale, double range, double miterLimit, int width, int height, const double *fixedX, const double *fixedY) {
+    scale *= geometryScale;
+    range /= geometryScale;
+    box.range = range;
+    box.scale = scale;
+    box.rect.w = width;
+    box.rect.h = height;
+    if (fixedX && fixedY) {
+        box.translate.x = *fixedX/geometryScale;
+        box.translate.y = *fixedY/geometryScale;
+    } else {
+        double l = bounds.l, b = bounds.b, r = bounds.r, t = bounds.t;
+        l -= .5*range, b -= .5*range;
+        r += .5*range, t += .5*range;
+        if (miterLimit > 0)
+            shape.boundMiters(l, b, r, t, .5*range, miterLimit, 1);
+        if (fixedX)
+            box.translate.x = *fixedX/geometryScale;
+        else {
+            double w = scale*(r-l);
+            box.translate.x = -l+.5*(box.rect.w-w)/scale;
+        }
+        if (fixedY)
+            box.translate.y = *fixedY/geometryScale;
+        else {
+            double h = scale*(t-b);
+            box.translate.y = -b+.5*(box.rect.h-h)/scale;
+        }
+    }
+}
+
 void GlyphGeometry::placeBox(int x, int y) {
     box.rect.x = x, box.rect.y = y;
 }
@@ -122,8 +153,16 @@ int GlyphGeometry::getIdentifier(GlyphIdentifierType type) const {
     return 0;
 }
 
+double GlyphGeometry::getGeometryScale() const {
+    return geometryScale;
+}
+
 const msdfgen::Shape & GlyphGeometry::getShape() const {
     return shape;
+}
+
+const msdfgen::Shape::Bounds & GlyphGeometry::getShapeBounds() const {
+    return bounds;
 }
 
 double GlyphGeometry::getAdvance() const {

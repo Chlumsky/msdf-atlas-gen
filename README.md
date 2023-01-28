@@ -88,10 +88,21 @@ Use the following command line arguments for the standalone version of the atlas
 Alternativelly, the minimum possible dimensions may be selected automatically if a dimensions constraint is set instead:
 
 - `-pots` &ndash; a power-of-two square
-- `-potr` &ndash; a power-of-two square or rectangle (2:1)
+- `-potr` &ndash; a power-of-two square or rectangle (typically 2:1 aspect ratio)
 - `-square` &ndash; any square dimensions
 - `-square2` &ndash; square with even side length
 - `-square4` (default) &ndash; square with side length divisible by four
+
+### Uniform grid atlas
+
+By default, glyphs in the atlas have different dimensions and are bin-packed in an irregular fashion to maximize use of space.
+With the `-uniformgrid` switch, you can instead force all glyphs to have identical dimensions and be laid out in a grid.
+In that case, these additional options are available to customize the layout:
+
+- `-uniformcols <N>` &ndash; sets the number of columns
+- `-uniformcell <width> <height>` &ndash; sets the dimensions of the grid's cells
+- `-uniformcellconstraint <none / pots / potr / square / square2 / square4>` &ndash; sets constraint for cell dimensions (see explanation of options above)
+- `-uniformorigin <yes / no / horizontal / vertical>` &ndash; sets whether the glyph's origin point should be fixed at the same position in each cell
 
 ### Outputs
 
@@ -105,9 +116,9 @@ Any non-empty subset of the following may be specified:
 
 ### Glyph configuration
 
-- `-size <EM size>` &ndash; sets the size of the glyphs in the atlas in pixels per EM
-- `-minsize <EM size>` &ndash; sets the minimum size. The largest possible size that fits the same atlas dimensions will be used
-- `-emrange <EM range>` &ndash; sets the distance field range in EM's
+- `-size <em size>` &ndash; sets the size of the glyphs in the atlas in pixels per em
+- `-minsize <em size>` &ndash; sets the minimum size. The largest possible size that fits the same atlas dimensions will be used
+- `-emrange <em range>` &ndash; sets the distance field range in em's
 - `-pxrange <pixel range>` (default = 2) &ndash; sets the distance field range in output pixels
 - `-pxalign <on / off / horizontal / vertical>` (default = vertical) &ndash; enables or disables alignment of glyph's origin point with the pixel grid
 
