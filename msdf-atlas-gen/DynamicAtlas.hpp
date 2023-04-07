@@ -3,11 +3,25 @@
 
 namespace msdf_atlas {
 
-template <class AtlasGenerator>
-DynamicAtlas<AtlasGenerator>::DynamicAtlas() : glyphCount(0), side(0), totalArea(0), padding(0) { }
+static int ceilPOT(int x) {
+    if (x > 0) {
+        int y = 1;
+        while (y < x)
+            y <<= 1;
+        return y;
+    }
+    return 0;
+}
 
 template <class AtlasGenerator>
-DynamicAtlas<AtlasGenerator>::DynamicAtlas(AtlasGenerator &&generator) : generator((AtlasGenerator &&) generator), glyphCount(0), side(0), totalArea(0), padding(0) { }
+DynamicAtlas<AtlasGenerator>::DynamicAtlas() : side(0), padding(0), glyphCount(0), totalArea(0) { }
+
+template <class AtlasGenerator>
+template <typename... ARGS>
+DynamicAtlas<AtlasGenerator>::DynamicAtlas(int minSide, ARGS... args) : side(ceilPOT(minSide)), padding(0), glyphCount(0), totalArea(0), packer(side+padding, side+padding), generator(side, side, args...) { }
+
+template <class AtlasGenerator>
+DynamicAtlas<AtlasGenerator>::DynamicAtlas(AtlasGenerator &&generator) : side(0), padding(0), glyphCount(0), totalArea(0), generator((AtlasGenerator &&) generator) { }
 
 template <class AtlasGenerator>
 typename DynamicAtlas<AtlasGenerator>::ChangeFlags DynamicAtlas<AtlasGenerator>::add(GlyphGeometry *glyphs, int count, bool allowRearrange) {
@@ -31,7 +45,7 @@ typename DynamicAtlas<AtlasGenerator>::ChangeFlags DynamicAtlas<AtlasGenerator>:
         int packerStart = start;
         int remaining;
         while ((remaining = packer.pack(rectangles.data()+packerStart, rectangles.size()-packerStart)) > 0) {
-            side = (side+!side)<<1;
+            side = (side|!side)<<1;
             while (side*side < totalArea)
                 side <<= 1;
             if (allowRearrange) {

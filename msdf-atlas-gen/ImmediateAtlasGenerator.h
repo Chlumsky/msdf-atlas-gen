@@ -20,6 +20,8 @@ class ImmediateAtlasGenerator {
 public:
     ImmediateAtlasGenerator();
     ImmediateAtlasGenerator(int width, int height);
+    template <typename... ARGS>
+    ImmediateAtlasGenerator(int width, int height, ARGS... storageArgs);
     void generate(const GlyphGeometry *glyphs, int count);
     void rearrange(int width, int height, const Remap *remapping, int count);
     void resize(int width, int height);
