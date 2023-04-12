@@ -181,7 +181,7 @@ if(MSDF_ATLAS_INSTALL)
     if(MSVC AND BUILD_SHARED_LIBS)
         install(FILES $<TARGET_PDB_FILE:msdf-atlas-gen> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
     endif()
-    
+
     export(EXPORT msdf-atlas-gen-targets NAMESPACE msdf-atlas-gen:: FILE "${CMAKE_CURRENT_BINARY_DIR}/msdf-atlas-gen-targets.cmake")
     install(EXPORT msdf-atlas-gen-targets FILE msdf-atlas-gen-targets.cmake NAMESPACE msdf-atlas-gen:: DESTINATION ${MSDF_ATLAS_CONFIG_PATH})
 
