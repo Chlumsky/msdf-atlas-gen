@@ -83,6 +83,8 @@ ATLAS CONFIGURATION
       power of two square / ... rectangle / any square / square with side divisible by 2 / ... 4
   -yorigin <bottom / top>
       Determines whether the Y-axis is oriented upwards (bottom origin, default) or downwards (top origin).
+  -padding <amount>
+      Specifies how much padding each glyph will have in the generated atlas
 
 OUTPUT SPECIFICATION - one or more can be specified
   -imageout <filename.*>
@@ -248,6 +250,7 @@ struct Configuration {
     double pxRange;
     double angleThreshold;
     double miterLimit;
+    double padding;
     void (*edgeColoring)(msdfgen::Shape &, double, unsigned long long);
     bool expensiveColoring;
     unsigned long long coloringSeed;
@@ -629,6 +632,14 @@ int main(int argc, const char * const *argv) {
             ++argPos;
             continue;
         }
+        ARG_CASE("-padding", 1) {
+            double m;
+            if (!(parseDouble(m, argv[++argPos]) && m >= 0))
+                ABORT("Invalid padding argument. Use -padding <amount> with a positive real number.");
+            config.padding = m;
+            ++argPos;
+            continue;
+        }
         ARG_CASE("-nokerning", 0) {
             config.kerning = false;
             ++argPos;
@@ -938,7 +949,7 @@ int main(int argc, const char * const *argv) {
             atlasPacker.setDimensions(fixedWidth, fixedHeight);
         else
             atlasPacker.setDimensionsConstraint(atlasSizeConstraint);
-        atlasPacker.setPadding(config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF ? 0 : -1);
+        atlasPacker.setPadding(config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF ? config.padding : -1);
         // TODO: In this case (if padding is -1), the border pixels of each glyph are black, but still computed. For floating-point output, this may play a role.
         if (fixedScale)
             atlasPacker.setScale(config.emSize);
