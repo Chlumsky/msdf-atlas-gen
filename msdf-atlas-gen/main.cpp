@@ -275,10 +275,10 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
 
     if (config.imageFilename) {
         if (saveImage(bitmap, config.imageFormat, config.imageFilename, config.yDirection))
-            puts("Atlas image file saved.");
+            fputs("Atlas image file saved.\n", stderr);
         else {
             success = false;
-            puts("Failed to save the atlas as an image file.");
+            fputs("Failed to save the atlas as an image file.\n", stderr);
         }
     }
 
@@ -291,10 +291,10 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
         arfontProps.imageFormat = config.imageFormat;
         arfontProps.yDirection = config.yDirection;
         if (exportArteryFont<float>(fonts.data(), fonts.size(), bitmap, config.arteryFontFilename, arfontProps))
-            puts("Artery Font file generated.");
+            fputs("Artery Font file generated.\n", stderr);
         else {
             success = false;
-            puts("Failed to generate Artery Font file.");
+            fputs("Failed to generate Artery Font file.\n", stderr);
         }
     }
 #endif
@@ -303,7 +303,7 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
 }
 
 int main(int argc, const char * const *argv) {
-    #define ABORT(msg) { puts(msg); return 1; }
+    #define ABORT(msg) do { fputs(msg "\n", stderr); return 1; } while (false)
 
     int result = 0;
     std::vector<FontInput> fontInputs;
@@ -617,7 +617,7 @@ int main(int argc, const char * const *argv) {
             else if (!strcmp(argv[argPos+1], "inktrap")) config.edgeColoring = msdfgen::edgeColoringInkTrap, config.expensiveColoring = false;
             else if (!strcmp(argv[argPos+1], "distance")) config.edgeColoring = msdfgen::edgeColoringByDistance, config.expensiveColoring = true;
             else
-                puts("Unknown coloring strategy specified.");
+                fputs("Unknown coloring strategy specified.\n", stderr);
             argPos += 2;
             continue;
         }
@@ -691,29 +691,29 @@ int main(int argc, const char * const *argv) {
             puts(helpText);
             return 0;
         }
-        printf("Unknown setting or insufficient parameters: %s\n", argv[argPos]);
+        fprintf(stderr, "Unknown setting or insufficient parameters: %s\n", argv[argPos]);
         suggestHelp = true;
         ++argPos;
     }
     if (suggestHelp)
-        printf("Use -help for more information.\n");
+        fputs("Use -help for more information.\n", stderr);
 
     // Nothing to do?
     if (argc == 1) {
-        printf(
+        fputs(
             "Usage: msdf-atlas-gen"
             #ifdef _WIN32
                 ".exe"
             #endif
             " -font <filename.ttf/otf> -charset <charset> <output specification> <options>\n"
-            "Use -help for more information.\n"
+            "Use -help for more information.\n", stderr
         );
         return 0;
     }
     if (!fontInput.fontFilename)
         ABORT("No font specified.");
     if (!(config.arteryFontFilename || config.imageFilename || config.jsonFilename || config.csvFilename || config.shadronPreviewFilename)) {
-        puts("No output specified.");
+        fputs("No output specified.\n", stderr);
         return 0;
     }
     bool layoutOnly = !(config.arteryFontFilename || config.imageFilename);
@@ -740,7 +740,7 @@ int main(int argc, const char * const *argv) {
     if (config.emSize > minEmSize)
         minEmSize = config.emSize;
     if (!(fixedWidth > 0 && fixedHeight > 0) && !(minEmSize > 0)) {
-        puts("Neither atlas size nor glyph size selected, using default...");
+        fputs("Neither atlas size nor glyph size selected, using default...\n", stderr);
         minEmSize = MSDF_ATLAS_DEFAULT_EM_SIZE;
     }
     if (config.imageType == ImageType::HARD_MASK || config.imageType == ImageType::SOFT_MASK) {
@@ -763,7 +763,7 @@ int main(int argc, const char * const *argv) {
                 case msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY: fallbackModeName = "auto-fast"; break;
                 case msdfgen::ErrorCorrectionConfig::EDGE_ONLY: fallbackModeName = "edge-fast"; break;
             }
-            printf("Selected error correction mode not compatible with scanline mode, falling back to %s.\n", fallbackModeName);
+            fprintf(stderr, "Selected error correction mode not compatible with scanline mode, falling back to %s.\n", fallbackModeName);
         }
         config.generatorAttributes.config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
     }
@@ -790,7 +790,7 @@ int main(int argc, const char * const *argv) {
     if (config.arteryFontFilename && !(config.imageFormat == ImageFormat::PNG || config.imageFormat == ImageFormat::BINARY || config.imageFormat == ImageFormat::BINARY_FLOAT)) {
         config.arteryFontFilename = nullptr;
         result = 1;
-        puts("Error: Unable to create an Artery Font file with the specified image format!");
+        fputs("Error: Unable to create an Artery Font file with the specified image format!\n", stderr);
         // Recheck whether there is anything else to do
         if (!(config.arteryFontFilename || config.imageFilename || config.jsonFilename || config.csvFilename || config.shadronPreviewFilename))
             return result;
@@ -811,7 +811,7 @@ int main(int argc, const char * const *argv) {
                 mismatch = imageExtension != config.imageFormat;
         }
         if (mismatch)
-            printf("Warning: Output image file extension does not match the image's actual format (%s)!\n", imageFormatName);
+            fprintf(stderr, "Warning: Output image file extension does not match the image's actual format (%s)!\n", imageFormatName);
     }
     imageFormatName = nullptr; // No longer consistent with imageFormat
     bool floatingPointFormat = (
@@ -894,21 +894,21 @@ int main(int argc, const char * const *argv) {
             printf(".\n");
             // List missing glyphs
             if (glyphsLoaded < (int) charset.size()) {
-                printf("Missing %d %s", (int) charset.size()-glyphsLoaded, fontInput.glyphIdentifierType == GlyphIdentifierType::UNICODE_CODEPOINT ? "codepoints" : "glyphs");
+                fprintf(stderr, "Missing %d %s", (int) charset.size()-glyphsLoaded, fontInput.glyphIdentifierType == GlyphIdentifierType::UNICODE_CODEPOINT ? "codepoints" : "glyphs");
                 bool first = true;
                 switch (fontInput.glyphIdentifierType) {
                     case GlyphIdentifierType::GLYPH_INDEX:
                         for (unicode_t cp : charset)
                             if (!fontGeometry.getGlyph(msdfgen::GlyphIndex(cp)))
-                                printf("%c 0x%02X", first ? ((first = false), ':') : ',', cp);
+                                fprintf(stderr, "%c 0x%02X", first ? ((first = false), ':') : ',', cp);
                         break;
                     case GlyphIdentifierType::UNICODE_CODEPOINT:
                         for (unicode_t cp : charset)
                             if (!fontGeometry.getGlyph(cp))
-                                printf("%c 0x%02X", first ? ((first = false), ':') : ',', cp);
+                                fprintf(stderr, "%c 0x%02X", first ? ((first = false), ':') : ',', cp);
                         break;
                 }
-                printf("\n");
+                fprintf(stderr, "\n");
             }
 
             if (fontInput.fontName)
@@ -951,7 +951,7 @@ int main(int argc, const char * const *argv) {
             if (remaining < 0) {
                 ABORT("Failed to pack glyphs into atlas.");
             } else {
-                printf("Error: Could not fit %d out of %d glyphs into the atlas.\n", remaining, (int) glyphs.size());
+                fprintf(stderr, "Error: Could not fit %d out of %d glyphs into the atlas.\n", remaining, (int) glyphs.size());
                 return 1;
             }
         }
@@ -1026,18 +1026,18 @@ int main(int argc, const char * const *argv) {
 
     if (config.csvFilename) {
         if (exportCSV(fonts.data(), fonts.size(), config.width, config.height, config.yDirection, config.csvFilename))
-            puts("Glyph layout written into CSV file.");
+            fputs("Glyph layout written into CSV file.\n", stderr);
         else {
             result = 1;
-            puts("Failed to write CSV output file.");
+            fputs("Failed to write CSV output file.\n", stderr);
         }
     }
     if (config.jsonFilename) {
         if (exportJSON(fonts.data(), fonts.size(), config.emSize, config.pxRange, config.width, config.height, config.imageType, config.yDirection, config.jsonFilename, config.kerning))
-            puts("Glyph layout and metadata written into JSON file.");
+            fputs("Glyph layout and metadata written into JSON file.\n", stderr);
         else {
             result = 1;
-            puts("Failed to write JSON output file.");
+            fputs("Failed to write JSON output file.\n", stderr);
         }
     }
 
@@ -1047,14 +1047,14 @@ int main(int argc, const char * const *argv) {
             utf8Decode(previewText, config.shadronPreviewText);
             previewText.push_back(0);
             if (generateShadronPreview(fonts.data(), fonts.size(), config.imageType, config.width, config.height, config.pxRange, previewText.data(), config.imageFilename, floatingPointFormat, config.shadronPreviewFilename))
-                puts("Shadron preview script generated.");
+                fputs("Shadron preview script generated.\n", stderr);
             else {
                 result = 1;
-                puts("Failed to generate Shadron preview file.");
+                fputs("Failed to generate Shadron preview file.\n", stderr);
             }
         } else {
             result = 1;
-            puts("Shadron preview not supported in -glyphset mode.");
+            fputs("Shadron preview not supported in -glyphset mode.\n", stderr);
         }
     }
 

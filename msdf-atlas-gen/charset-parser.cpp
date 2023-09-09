@@ -220,6 +220,7 @@ bool Charset::load(const char *filename, bool disableCharLiterals) {
                         else
                             goto FAIL;
                     } // else treat as whitespace
+                    // fallthrough
                 case ' ': case '\n': case '\r': case '\t': // whitespace
                     if (state == TIGHT)
                         state = CLEAR;
