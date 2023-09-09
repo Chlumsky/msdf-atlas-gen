@@ -63,8 +63,8 @@ private:
     double miterLimit;
     double scaleMaximizationTolerance;
 
-    static int tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, int padding, double scale, double range, double miterLimit);
-    static double packAndScale(GlyphGeometry *glyphs, int count, int width, int height, int padding, double unitRange, double pxRange, double miterLimit, double tolerance);
+    int tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, double scale) const;
+    double packAndScale(GlyphGeometry *glyphs, int count) const;
 
 };
 

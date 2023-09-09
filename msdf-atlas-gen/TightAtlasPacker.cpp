@@ -8,7 +8,20 @@
 
 namespace msdf_atlas {
 
-int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, int padding, double scale, double range, double miterLimit) {
+TightAtlasPacker::TightAtlasPacker() :
+    width(-1), height(-1),
+    padding(0),
+    dimensionsConstraint(DimensionsConstraint::POWER_OF_TWO_SQUARE),
+    scale(-1),
+    minScale(1),
+    unitRange(0),
+    pxRange(0),
+    miterLimit(0),
+    scaleMaximizationTolerance(.001)
+{ }
+
+int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, double scale) const {
+    double range = unitRange+pxRange/scale;
     // Wrap glyphs into boxes
     std::vector<Rectangle> rectangles;
     std::vector<GlyphGeometry *> rectangleGlyphs;
@@ -64,9 +77,10 @@ int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstr
     return 0;
 }
 
-double TightAtlasPacker::packAndScale(GlyphGeometry *glyphs, int count, int width, int height, int padding, double unitRange, double pxRange, double miterLimit, double tolerance) {
+double TightAtlasPacker::packAndScale(GlyphGeometry *glyphs, int count) const {
     bool lastResult = false;
-    #define TRY_PACK(scale) (lastResult = !tryPack(glyphs, count, DimensionsConstraint(), width, height, padding, (scale), unitRange+pxRange/(scale), miterLimit))
+    int w = width, h = height;
+    #define TRY_PACK(scale) (lastResult = !tryPack(glyphs, count, DimensionsConstraint(), w, h, (scale)))
     double minScale = 1, maxScale = 1;
     if (TRY_PACK(1)) {
         while (maxScale < 1e+32 && ((maxScale = 2*minScale), TRY_PACK(maxScale)))
@@ -77,7 +91,7 @@ double TightAtlasPacker::packAndScale(GlyphGeometry *glyphs, int count, int widt
     }
     if (minScale == maxScale)
         return 0;
-    while (minScale/maxScale < 1-tolerance) {
+    while (minScale/maxScale < 1-scaleMaximizationTolerance) {
         double midScale = .5*(minScale+maxScale);
         if (TRY_PACK(midScale))
             minScale = midScale;
@@ -89,27 +103,15 @@ double TightAtlasPacker::packAndScale(GlyphGeometry *glyphs, int count, int widt
     return minScale;
 }
 
-TightAtlasPacker::TightAtlasPacker() :
-    width(-1), height(-1),
-    padding(0),
-    dimensionsConstraint(DimensionsConstraint::POWER_OF_TWO_SQUARE),
-    scale(-1),
-    minScale(1),
-    unitRange(0),
-    pxRange(0),
-    miterLimit(0),
-    scaleMaximizationTolerance(.001)
-{ }
-
 int TightAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
     double initialScale = scale > 0 ? scale : minScale;
     if (initialScale > 0) {
-        if (int remaining = tryPack(glyphs, count, dimensionsConstraint, width, height, padding, initialScale, unitRange+pxRange/initialScale, miterLimit))
+        if (int remaining = tryPack(glyphs, count, dimensionsConstraint, width, height, initialScale))
             return remaining;
     } else if (width < 0 || height < 0)
         return -1;
     if (scale <= 0)
-        scale = packAndScale(glyphs, count, width, height, padding, unitRange, pxRange, miterLimit, scaleMaximizationTolerance);
+        scale = packAndScale(glyphs, count);
     if (scale <= 0)
         return -1;
     pxRange += scale*unitRange;
