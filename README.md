@@ -49,6 +49,7 @@ Use the following command line arguments for the standalone version of the atlas
   - Alternatively, use `-varfont <fontfile.ttf/otf?var0=value0&var1=value1>` to configure a variable font.
 - `-charset <charset.txt>` &ndash; sets the character set. The ASCII charset will be used if not specified. See [the syntax specification](#character-set-specification-syntax) of `charset.txt`.
 - `-glyphset <glyphset.txt>` &ndash; sets the set of input glyphs using their indices within the font file. See [the syntax specification](#glyph-set-specification).
+- `-allglyphs` &ndash; sets the set of input glyphs to all glyphs present within the font file.
 - `-fontscale <scale>` &ndash; applies a scaling transformation to the font's glyphs. Mainly to be used to generate multiple sizes in a single atlas, otherwise use [`-size`](#glyph-configuration).
 - `-fontname <name>` &ndash; sets a name for the font that will be stored in certain output files as metadata.
 - `-and` &ndash; separates multiple inputs to be combined into a single atlas.

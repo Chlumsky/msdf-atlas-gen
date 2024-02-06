@@ -64,6 +64,8 @@ INPUT SPECIFICATION
       Specifies the input character set. Refer to the documentation for format of charset specification. Defaults to ASCII.
   -glyphset <filename>
       Specifies the set of input glyphs as glyph indices within the font file.
+  -allglyphs
+      Specifies that all glyphs within the font file are to be processed.
   -fontscale <scale>
       Specifies the scale to be applied to the glyph geometry of the font.
   -fontname <name>
@@ -415,6 +417,12 @@ int main(int argc, const char * const *argv) {
         }
         ARG_CASE("-glyphset", 1) {
             fontInput.charsetFilename = argv[++argPos];
+            fontInput.glyphIdentifierType = GlyphIdentifierType::GLYPH_INDEX;
+            ++argPos;
+            continue;
+        }
+        ARG_CASE("-allglyphs", 0) {
+            fontInput.charsetFilename = nullptr;
             fontInput.glyphIdentifierType = GlyphIdentifierType::GLYPH_INDEX;
             ++argPos;
             continue;
@@ -866,20 +874,24 @@ int main(int argc, const char * const *argv) {
 
             // Load character set
             Charset charset;
+            unsigned allGlyphCount = 0;
             if (fontInput.charsetFilename) {
                 if (!charset.load(fontInput.charsetFilename, fontInput.glyphIdentifierType != GlyphIdentifierType::UNICODE_CODEPOINT))
                     ABORT(fontInput.glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX ? "Failed to load glyph set specification." : "Failed to load character set specification.");
-            } else {
+            } else if (fontInput.glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX)
+                msdfgen::getGlyphCount(allGlyphCount, font);
+            else
                 charset = Charset::ASCII;
-                fontInput.glyphIdentifierType = GlyphIdentifierType::UNICODE_CODEPOINT;
-            }
 
             // Load glyphs
             FontGeometry fontGeometry(&glyphs);
             int glyphsLoaded = -1;
             switch (fontInput.glyphIdentifierType) {
                 case GlyphIdentifierType::GLYPH_INDEX:
-                    glyphsLoaded = fontGeometry.loadGlyphset(font, fontInput.fontScale, charset, config.preprocessGeometry, config.kerning);
+                    if (allGlyphCount)
+                        glyphsLoaded = fontGeometry.loadGlyphRange(font, fontInput.fontScale, 0, allGlyphCount, config.preprocessGeometry, config.kerning);
+                    else
+                        glyphsLoaded = fontGeometry.loadGlyphset(font, fontInput.fontScale, charset, config.preprocessGeometry, config.kerning);
                     break;
                 case GlyphIdentifierType::UNICODE_CODEPOINT:
                     glyphsLoaded = fontGeometry.loadCharset(font, fontInput.fontScale, charset, config.preprocessGeometry, config.kerning);
@@ -888,7 +900,7 @@ int main(int argc, const char * const *argv) {
             }
             if (glyphsLoaded < 0)
                 ABORT("Failed to load glyphs from font.");
-            printf("Loaded geometry of %d out of %d glyphs", glyphsLoaded, (int) charset.size());
+            printf("Loaded geometry of %d out of %d glyphs", glyphsLoaded, (int) (allGlyphCount+charset.size()));
             if (fontInputs.size() > 1)
                 printf(" from font \"%s\"", fontInput.fontFilename);
             printf(".\n");
@@ -908,6 +920,13 @@ int main(int argc, const char * const *argv) {
                                 fprintf(stderr, "%c 0x%02X", first ? ((first = false), ':') : ',', cp);
                         break;
                 }
+                fprintf(stderr, "\n");
+            } else if (glyphsLoaded < (int) allGlyphCount) {
+                fprintf(stderr, "Missing %d glyphs", (int) allGlyphCount-glyphsLoaded);
+                bool first = true;
+                for (unsigned i = 0; i < allGlyphCount; ++i)
+                    if (!fontGeometry.getGlyph(msdfgen::GlyphIndex(i)))
+                        fprintf(stderr, "%c 0x%02X", first ? ((first = false), ':') : ',', i);
                 fprintf(stderr, "\n");
             }
 

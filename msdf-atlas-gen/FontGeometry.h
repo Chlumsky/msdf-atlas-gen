@@ -35,6 +35,8 @@ public:
     FontGeometry();
     explicit FontGeometry(std::vector<GlyphGeometry> *glyphStorage);
 
+    /// Loads the consecutive range of glyphs between rangeStart (inclusive) and rangeEnd (exclusive), returns the number of successfully loaded glyphs
+    int loadGlyphRange(msdfgen::FontHandle *font, double fontScale, unsigned rangeStart, unsigned rangeEnd, bool preprocessGeometry = true, bool enableKerning = true);
     /// Loads all glyphs in a glyphset (Charset elements are glyph indices), returns the number of successfully loaded glyphs
     int loadGlyphset(msdfgen::FontHandle *font, double fontScale, const Charset &glyphset, bool preprocessGeometry = true, bool enableKerning = true);
     /// Loads all glyphs in a charset (Charset elements are Unicode codepoints), returns the number of successfully loaded glyphs
