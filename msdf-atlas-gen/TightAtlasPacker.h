@@ -32,7 +32,9 @@ public:
     void unsetDimensions();
     /// Sets the constraint to be used when determining dimensions
     void setDimensionsConstraint(DimensionsConstraint dimensionsConstraint);
-    /// Sets the padding between glyph boxes
+    /// Sets the size offset applied to glyph boxes before packing
+    void setSizeOffset(int sizeOffset);
+    /// Sets the padding between glyph boxes and the edge of the atlas
     void setPadding(int padding);
     /// Sets fixed glyph scale
     void setScale(double scale);
@@ -54,6 +56,7 @@ public:
 
 private:
     int width, height;
+    int sizeOffset;
     int padding;
     DimensionsConstraint dimensionsConstraint;
     double scale;
@@ -63,8 +66,8 @@ private:
     double miterLimit;
     double scaleMaximizationTolerance;
 
-    static int tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, int padding, double scale, double range, double miterLimit);
-    static double packAndScale(GlyphGeometry *glyphs, int count, int width, int height, int padding, double unitRange, double pxRange, double miterLimit, double tolerance);
+    static int tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, int sizeOffset, int padding, double scale, double range, double miterLimit);
+    static double packAndScale(GlyphGeometry *glyphs, int count, int width, int height, int sizeOffset, int padding, double unitRange, double pxRange, double miterLimit, double tolerance);
 
 };
 
