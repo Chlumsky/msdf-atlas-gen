@@ -8,7 +8,7 @@
 
 namespace msdf_atlas {
 
-int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, int padding, double scale, double range, double miterLimit) {
+int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, int sizeOffset, int padding, double scale, double range, double miterLimit) {
     // Wrap glyphs into boxes
     std::vector<Rectangle> rectangles;
     std::vector<GlyphGeometry *> rectangleGlyphs;
@@ -36,26 +36,26 @@ int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstr
         std::pair<int, int> dimensions = std::make_pair(width, height);
         switch (dimensionsConstraint) {
             case DimensionsConstraint::POWER_OF_TWO_SQUARE:
-                dimensions = packRectangles<SquarePowerOfTwoSizeSelector>(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<SquarePowerOfTwoSizeSelector>(rectangles.data(), rectangles.size(), sizeOffset, padding);
                 break;
             case DimensionsConstraint::POWER_OF_TWO_RECTANGLE:
-                dimensions = packRectangles<PowerOfTwoSizeSelector>(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<PowerOfTwoSizeSelector>(rectangles.data(), rectangles.size(), sizeOffset, padding);
                 break;
             case DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE:
-                dimensions = packRectangles<SquareSizeSelector<4> >(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<SquareSizeSelector<4> >(rectangles.data(), rectangles.size(), sizeOffset, padding);
                 break;
             case DimensionsConstraint::EVEN_SQUARE:
-                dimensions = packRectangles<SquareSizeSelector<2> >(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<SquareSizeSelector<2> >(rectangles.data(), rectangles.size(), sizeOffset, padding);
                 break;
             case DimensionsConstraint::SQUARE:
-                dimensions = packRectangles<SquareSizeSelector<> >(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<SquareSizeSelector<> >(rectangles.data(), rectangles.size(), sizeOffset, padding);
                 break;
         }
         if (!(dimensions.first > 0 && dimensions.second > 0))
             return -1;
         width = dimensions.first, height = dimensions.second;
     } else {
-        if (int result = packRectangles(rectangles.data(), rectangles.size(), width, height, padding))
+        if (int result = packRectangles(rectangles.data(), rectangles.size(), width, height, sizeOffset, padding))
             return result;
     }
     // Set glyph box placement
@@ -64,9 +64,9 @@ int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstr
     return 0;
 }
 
-double TightAtlasPacker::packAndScale(GlyphGeometry *glyphs, int count, int width, int height, int padding, double unitRange, double pxRange, double miterLimit, double tolerance) {
+double TightAtlasPacker::packAndScale(GlyphGeometry *glyphs, int count, int width, int height, int sizeOffset, int padding, double unitRange, double pxRange, double miterLimit, double tolerance) {
     bool lastResult = false;
-    #define TRY_PACK(scale) (lastResult = !tryPack(glyphs, count, DimensionsConstraint(), width, height, padding, (scale), unitRange+pxRange/(scale), miterLimit))
+    #define TRY_PACK(scale) (lastResult = !tryPack(glyphs, count, DimensionsConstraint(), width, height, sizeOffset, padding, (scale), unitRange+pxRange/(scale), miterLimit))
     double minScale = 1, maxScale = 1;
     if (TRY_PACK(1)) {
         while (maxScale < 1e+32 && ((maxScale = 2*minScale), TRY_PACK(maxScale)))
@@ -91,6 +91,7 @@ double TightAtlasPacker::packAndScale(GlyphGeometry *glyphs, int count, int widt
 
 TightAtlasPacker::TightAtlasPacker() :
     width(-1), height(-1),
+    sizeOffset(0),
     padding(0),
     dimensionsConstraint(DimensionsConstraint::POWER_OF_TWO_SQUARE),
     scale(-1),
@@ -104,12 +105,12 @@ TightAtlasPacker::TightAtlasPacker() :
 int TightAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
     double initialScale = scale > 0 ? scale : minScale;
     if (initialScale > 0) {
-        if (int remaining = tryPack(glyphs, count, dimensionsConstraint, width, height, padding, initialScale, unitRange+pxRange/initialScale, miterLimit))
+        if (int remaining = tryPack(glyphs, count, dimensionsConstraint, width, height, sizeOffset, padding, initialScale, unitRange+pxRange/initialScale, miterLimit))
             return remaining;
     } else if (width < 0 || height < 0)
         return -1;
     if (scale <= 0)
-        scale = packAndScale(glyphs, count, width, height, padding, unitRange, pxRange, miterLimit, scaleMaximizationTolerance);
+        scale = packAndScale(glyphs, count, width, height, sizeOffset, padding, unitRange, pxRange, miterLimit, scaleMaximizationTolerance);
     if (scale <= 0)
         return -1;
     pxRange += scale*unitRange;
@@ -127,6 +128,10 @@ void TightAtlasPacker::unsetDimensions() {
 
 void TightAtlasPacker::setDimensionsConstraint(DimensionsConstraint dimensionsConstraint) {
     this->dimensionsConstraint = dimensionsConstraint;
+}
+
+void TightAtlasPacker::setSizeOffset(int sizeOffset) {
+    this->sizeOffset = sizeOffset;
 }
 
 void TightAtlasPacker::setPadding(int padding) {
