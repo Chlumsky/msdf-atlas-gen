@@ -109,6 +109,7 @@ Any non-empty subset of the following may be specified:
 - `-minsize <EM size>` &ndash; sets the minimum size. The largest possible size that fits the same atlas dimensions will be used
 - `-emrange <EM range>` &ndash; sets the distance field range in EM's
 - `-pxrange <pixel range>` (default = 2) &ndash; sets the distance field range in output pixels
+- `-pxalign <on / off / horizontal / vertical>` (default = vertical) &ndash; enables or disables alignment of glyph's origin point with the pixel grid
 
 ### Distance field generator settings
 

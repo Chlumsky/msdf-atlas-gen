@@ -17,6 +17,7 @@ TightAtlasPacker::TightAtlasPacker() :
     unitRange(0),
     pxRange(0),
     miterLimit(0),
+    alignOriginX(false), alignOriginY(false),
     scaleMaximizationTolerance(.001)
 { }
 
@@ -30,7 +31,7 @@ int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstr
     for (GlyphGeometry *glyph = glyphs, *end = glyphs+count; glyph < end; ++glyph) {
         if (!glyph->isWhitespace()) {
             Rectangle rect = { };
-            glyph->wrapBox(scale, range, miterLimit);
+            glyph->wrapBox(scale, range, miterLimit, alignOriginX, alignOriginY);
             glyph->getBoxSize(rect.w, rect.h);
             if (rect.w > 0 && rect.h > 0) {
                 rectangles.push_back(rect);
@@ -153,6 +154,14 @@ void TightAtlasPacker::setPixelRange(double pxRange) {
 
 void TightAtlasPacker::setMiterLimit(double miterLimit) {
     this->miterLimit = miterLimit;
+}
+
+void TightAtlasPacker::setOriginAlignment(bool align) {
+    alignOriginX = align, alignOriginY = align;
+}
+
+void TightAtlasPacker::setOriginAlignment(bool alignX, bool alignY) {
+    alignOriginX = alignX, alignOriginY = alignY;
 }
 
 void TightAtlasPacker::getDimensions(int &width, int &height) const {

@@ -111,6 +111,8 @@ GLYPH CONFIGURATION
       Specifies the SDF distance range in EM's.
   -pxrange <pixel range>
       Specifies the SDF distance range in output pixels. The default value is 2.
+  -pxalign <on / off / horizontal / vertical>
+      Specifies whether each glyph's origin point should be aligned with the pixel grid.
   -nokerning
       Disables inclusion of kerning pair table in output files.
 
@@ -250,6 +252,7 @@ struct Configuration {
     double pxRange;
     double angleThreshold;
     double miterLimit;
+    bool alignOriginX, alignOriginY;
     void (*edgeColoring)(msdfgen::Shape &, double, unsigned long long);
     bool expensiveColoring;
     unsigned long long coloringSeed;
@@ -340,6 +343,7 @@ int main(int argc, const char * const *argv) {
     TightAtlasPacker::DimensionsConstraint atlasSizeConstraint = TightAtlasPacker::DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
     config.angleThreshold = DEFAULT_ANGLE_THRESHOLD;
     config.miterLimit = DEFAULT_MITER_LIMIT;
+    config.alignOriginX = false, config.alignOriginY = true;
     config.threadCount = 0;
 
     // Parse command line
@@ -561,6 +565,20 @@ int main(int argc, const char * const *argv) {
             ++argPos;
             continue;
         }
+        ARG_CASE("-pxalign", 1) {
+            if (!strcmp(argv[argPos+1], "off") || !memcmp(argv[argPos+1], "disable", 7) || !strcmp(argv[argPos+1], "0") || argv[argPos+1][0] == 'n')
+                config.alignOriginX = false, config.alignOriginY = false;
+            else if (!strcmp(argv[argPos+1], "on") || !memcmp(argv[argPos+1], "enable", 6) || !strcmp(argv[argPos+1], "1") || argv[argPos+1][0] == 'y')
+                config.alignOriginX = true, config.alignOriginY = true;
+            else if (argv[argPos+1][0] == 'h')
+                config.alignOriginX = true, config.alignOriginY = false;
+            else if (argv[argPos+1][0] == 'v' || !strcmp(argv[argPos+1], "baseline") || !strcmp(argv[argPos+1], "default"))
+                config.alignOriginX = false, config.alignOriginY = true;
+            else
+                ABORT("Unknown -pxalign setting. Use on, off, horizontal, or vertical.");
+            argPos += 2;
+            continue;
+        }
         ARG_CASE("-angle", 1) {
             double at;
             if (!parseAngle(at, argv[argPos+1]))
@@ -571,7 +589,7 @@ int main(int argc, const char * const *argv) {
         }
         ARG_CASE("-errorcorrection", 1) {
             msdfgen::ErrorCorrectionConfig &ec = config.generatorAttributes.config.errorCorrection;
-            if (!strcmp(argv[argPos+1], "disabled") || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "none")) {
+            if (!memcmp(argv[argPos+1], "disable", 7) || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "none")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::DISABLED;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
             } else if (!strcmp(argv[argPos+1], "default") || !strcmp(argv[argPos+1], "auto") || !strcmp(argv[argPos+1], "auto-mixed") || !strcmp(argv[argPos+1], "mixed")) {
@@ -714,7 +732,8 @@ int main(int argc, const char * const *argv) {
                 ".exe"
             #endif
             " -font <filename.ttf/otf> -charset <charset> <output specification> <options>\n"
-            "Use -help for more information.\n", stderr
+            "Use -help for more information.\n",
+            stderr
         );
         return 0;
     }
@@ -789,8 +808,12 @@ int main(int argc, const char * const *argv) {
         config.imageFormat = ImageFormat::PNG;
         imageFormatName = "png";
         // If image format is not specified and -imageout is the only image output, infer format from its extension
-        if (imageExtension != ImageFormat::UNSPECIFIED && !config.arteryFontFilename)
-            config.imageFormat = imageExtension;
+        if (!config.arteryFontFilename) {
+            if (imageExtension != ImageFormat::UNSPECIFIED)
+                config.imageFormat = imageExtension;
+            else
+                fputs("Warning: Could not infer image format from file extension, PNG will be used.\n", stderr);
+        }
     }
     if (config.imageType == ImageType::MTSDF && config.imageFormat == ImageFormat::BMP)
         ABORT("Atlas type not compatible with image format. MTSDF requires a format with alpha channel.");
@@ -966,6 +989,7 @@ int main(int argc, const char * const *argv) {
         atlasPacker.setPixelRange(pxRange);
         atlasPacker.setUnitRange(unitRange);
         atlasPacker.setMiterLimit(config.miterLimit);
+        atlasPacker.setOriginAlignment(config.alignOriginX, config.alignOriginY);
         if (int remaining = atlasPacker.pack(glyphs.data(), glyphs.size())) {
             if (remaining < 0) {
                 ABORT("Failed to pack glyphs into atlas.");
