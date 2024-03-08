@@ -20,10 +20,11 @@ public:
     /// Applies edge coloring to glyph shape
     void edgeColoring(void (*fn)(msdfgen::Shape &, double, unsigned long long), double angleThreshold, unsigned long long seed);
     /// Computes the dimensions of the glyph's box as well as the transformation for the generator function
-    void wrapBox(double scale, double range, double miterLimit, bool alignOrigin = false);
-    void wrapBox(double scale, double range, double miterLimit, bool alignOriginX, bool alignOriginY);
+    void wrapBox(double scale, double range, double miterLimit, bool pxAlignOrigin = false);
+    void wrapBox(double scale, double range, double miterLimit, bool pxAlignOriginX, bool pxAlignOriginY);
     /// Computes the glyph's transformation and alignment (unless specified) for given dimensions
-    void frameBox(double scale, double range, double miterLimit, int width, int height, const double *fixedX, const double *fixedY);
+    void frameBox(double scale, double range, double miterLimit, int width, int height, const double *fixedX, const double *fixedY, bool pxAlignOrigin = false);
+    void frameBox(double scale, double range, double miterLimit, int width, int height, const double *fixedX, const double *fixedY, bool pxAlignOriginX, bool pxAlignOriginY);
     /// Sets the glyph's box's position in the atlas
     void placeBox(int x, int y);
     /// Sets the glyph's box's rectangle in the atlas

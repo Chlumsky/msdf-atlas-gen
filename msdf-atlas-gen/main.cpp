@@ -2,7 +2,7 @@
 /*
 * MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR - standalone console program
 * --------------------------------------------------------------------------------
-* A utility by Viktor Chlumsky, (c) 2020 - 2023
+* A utility by Viktor Chlumsky, (c) 2020 - 2024
 */
 
 #ifdef MSDF_ATLAS_STANDALONE
@@ -91,7 +91,7 @@ ATLAS CONFIGURATION
         Sets fixed dimensions of the grid's cells.
     -uniformcellconstraint <none / pots / potr / square / square2 / square4>
         Constrains cell dimensions to the given rule (see -pots / ... above)
-    -uniformorigin <yes / no / horizontal / vertical>
+    -uniformorigin <off / on / horizontal / vertical>
         Sets whether the glyph's origin point should be fixed at the same position in each cell
   -yorigin <bottom / top>
       Determines whether the Y-axis is oriented upwards (bottom origin, default) or downwards (top origin).
@@ -121,7 +121,7 @@ GLYPH CONFIGURATION
       Specifies the SDF distance range in em's.
   -pxrange <pixel range>
       Specifies the SDF distance range in output pixels. The default value is 2.
-  -pxalign <on / off / horizontal / vertical>
+  -pxalign <off / on / horizontal / vertical>
       Specifies whether each glyph's origin point should be aligned with the pixel grid.
   -nokerning
       Disables inclusion of kerning pair table in output files.
@@ -262,11 +262,11 @@ struct Configuration {
     double pxRange;
     double angleThreshold;
     double miterLimit;
-    bool alignOriginX, alignOriginY;
+    bool pxAlignOriginX, pxAlignOriginY;
     struct {
         int cellWidth, cellHeight;
         int cols, rows;
-        bool hFixed, vFixed;
+        bool fixedOriginX, fixedOriginY;
     } grid;
     void (*edgeColoring)(msdfgen::Shape &, double, unsigned long long);
     bool expensiveColoring;
@@ -334,7 +334,7 @@ int main(int argc, const char * const *argv) {
     config.imageType = ImageType::MSDF;
     config.imageFormat = ImageFormat::UNSPECIFIED;
     config.yDirection = YDirection::BOTTOM_UP;
-    config.grid.vFixed = true;
+    config.grid.fixedOriginX = false, config.grid.fixedOriginY = true;
     config.edgeColoring = msdfgen::edgeColoringInkTrap;
     config.kerning = true;
     const char *imageFormatName = nullptr;
@@ -362,7 +362,7 @@ int main(int argc, const char * const *argv) {
     DimensionsConstraint cellSizeConstraint = DimensionsConstraint::NONE;
     config.angleThreshold = DEFAULT_ANGLE_THRESHOLD;
     config.miterLimit = DEFAULT_MITER_LIMIT;
-    config.alignOriginX = false, config.alignOriginY = true;
+    config.pxAlignOriginX = false, config.pxAlignOriginY = true;
     config.threadCount = 0;
 
     // Parse command line
@@ -585,16 +585,16 @@ int main(int argc, const char * const *argv) {
             continue;
         }
         ARG_CASE("-pxalign", 1) {
-            if (!strcmp(argv[argPos+1], "off") || !memcmp(argv[argPos+1], "disable", 7) || !strcmp(argv[argPos+1], "0") || argv[argPos+1][0] == 'n')
-                config.alignOriginX = false, config.alignOriginY = false;
-            else if (!strcmp(argv[argPos+1], "on") || !memcmp(argv[argPos+1], "enable", 6) || !strcmp(argv[argPos+1], "1") || argv[argPos+1][0] == 'y')
-                config.alignOriginX = true, config.alignOriginY = true;
+            if (!strcmp(argv[argPos+1], "off") || !memcmp(argv[argPos+1], "disable", 7) || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "false") || argv[argPos+1][0] == 'n')
+                config.pxAlignOriginX = false, config.pxAlignOriginY = false;
+            else if (!strcmp(argv[argPos+1], "on") || !memcmp(argv[argPos+1], "enable", 6) || !strcmp(argv[argPos+1], "1") || !strcmp(argv[argPos+1], "true") || !strcmp(argv[argPos+1], "hv") || argv[argPos+1][0] == 'y')
+                config.pxAlignOriginX = true, config.pxAlignOriginY = true;
             else if (argv[argPos+1][0] == 'h')
-                config.alignOriginX = true, config.alignOriginY = false;
+                config.pxAlignOriginX = true, config.pxAlignOriginY = false;
             else if (argv[argPos+1][0] == 'v' || !strcmp(argv[argPos+1], "baseline") || !strcmp(argv[argPos+1], "default"))
-                config.alignOriginX = false, config.alignOriginY = true;
+                config.pxAlignOriginX = false, config.pxAlignOriginY = true;
             else
-                ABORT("Unknown -pxalign setting. Use on, off, horizontal, or vertical.");
+                ABORT("Unknown -pxalign setting. Use one of: off, on, horizontal, vertical.");
             argPos += 2;
             continue;
         }
@@ -650,16 +650,16 @@ int main(int argc, const char * const *argv) {
         }
         ARG_CASE("-uniformorigin", 1) {
             packingStyle = PackingStyle::GRID;
-            if (!strcmp(argv[argPos+1], "no") || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "none") || !strcmp(argv[argPos+1], "false") || !strcmp(argv[argPos+1], "disabled"))
-                config.grid.hFixed = false, config.grid.vFixed = false;
-            else if (!strcmp(argv[argPos+1], "yes") || !strcmp(argv[argPos+1], "1") || !strcmp(argv[argPos+1], "both") || !strcmp(argv[argPos+1], "true") || !strcmp(argv[argPos+1], "enabled"))
-                config.grid.hFixed = true, config.grid.vFixed = true;
-            else if (!strcmp(argv[argPos+1], "horizontal") || !strcmp(argv[argPos+1], "h"))
-                config.grid.hFixed = true, config.grid.vFixed = false;
-            else if (!strcmp(argv[argPos+1], "vertical") || !strcmp(argv[argPos+1], "v") || !strcmp(argv[argPos+1], "default"))
-                config.grid.hFixed = false, config.grid.vFixed = true;
+            if (!strcmp(argv[argPos+1], "off") || !memcmp(argv[argPos+1], "disable", 7) || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "false") || argv[argPos+1][0] == 'n')
+                config.grid.fixedOriginX = false, config.grid.fixedOriginY = false;
+            else if (!strcmp(argv[argPos+1], "on") || !memcmp(argv[argPos+1], "enable", 6) || !strcmp(argv[argPos+1], "1") || !strcmp(argv[argPos+1], "true") || !strcmp(argv[argPos+1], "hv") || argv[argPos+1][0] == 'y')
+                config.grid.fixedOriginX = true, config.grid.fixedOriginY = true;
+            else if (argv[argPos+1][0] == 'h')
+                config.grid.fixedOriginX = true, config.grid.fixedOriginY = false;
+            else if (argv[argPos+1][0] == 'v' || !strcmp(argv[argPos+1], "baseline") || !strcmp(argv[argPos+1], "default"))
+                config.grid.fixedOriginX = false, config.grid.fixedOriginY = true;
             else
-                ABORT("Unknown option for -uniformorigin. Use one of: yes, no, horizontal, vertical.");
+                ABORT("Unknown -uniformorigin setting. Use one of: off, on, horizontal, vertical.");
             argPos += 2;
             continue;
         }
@@ -889,7 +889,7 @@ int main(int argc, const char * const *argv) {
         if (!config.arteryFontFilename) {
             if (imageExtension != ImageFormat::UNSPECIFIED)
                 config.imageFormat = imageExtension;
-            else
+            else if (config.imageFilename)
                 fputs("Warning: Could not infer image format from file extension, PNG will be used.\n", stderr);
         }
     }
@@ -1072,7 +1072,7 @@ int main(int argc, const char * const *argv) {
                 atlasPacker.setPixelRange(pxRange);
                 atlasPacker.setUnitRange(unitRange);
                 atlasPacker.setMiterLimit(config.miterLimit);
-                atlasPacker.setOriginAlignment(config.alignOriginX, config.alignOriginY);
+                atlasPacker.setOriginPixelAlignment(config.pxAlignOriginX, config.pxAlignOriginY);
                 if (int remaining = atlasPacker.pack(glyphs.data(), glyphs.size())) {
                     if (remaining < 0) {
                         ABORT("Failed to pack glyphs into atlas.");
@@ -1095,7 +1095,7 @@ int main(int argc, const char * const *argv) {
 
             case PackingStyle::GRID: {
                 GridAtlasPacker atlasPacker;
-                atlasPacker.setFixedOrigin(config.grid.hFixed, config.grid.vFixed);
+                atlasPacker.setFixedOrigin(config.grid.fixedOriginX, config.grid.fixedOriginY);
                 if (fixedCellWidth >= 0 && fixedCellHeight >= 0)
                     atlasPacker.setCellDimensions(fixedCellWidth, fixedCellHeight);
                 else
@@ -1114,7 +1114,7 @@ int main(int argc, const char * const *argv) {
                 atlasPacker.setPixelRange(pxRange);
                 atlasPacker.setUnitRange(unitRange);
                 atlasPacker.setMiterLimit(config.miterLimit);
-                //atlasPacker.setOriginAlignment(config.alignOriginX, config.alignOriginY);
+                atlasPacker.setOriginPixelAlignment(config.pxAlignOriginX, config.pxAlignOriginY);
                 if (int remaining = atlasPacker.pack(glyphs.data(), glyphs.size())) {
                     if (remaining < 0) {
                         ABORT("Failed to pack glyphs into atlas.");
@@ -1133,14 +1133,14 @@ int main(int argc, const char * const *argv) {
                 config.grid.rows = atlasPacker.getRows();
                 if (!fixedScale)
                     printf("Glyph size: %.9g pixels/em\n", config.emSize);
-                if (config.grid.hFixed || config.grid.vFixed) {
+                if (config.grid.fixedOriginX || config.grid.fixedOriginY) {
                     atlasPacker.getFixedOrigin(uniformOriginX, uniformOriginY);
                     printf("Grid cell origin: ");
-                    if (config.grid.hFixed)
+                    if (config.grid.fixedOriginX)
                         printf("X = %.9g", uniformOriginX);
-                    if (config.grid.hFixed && config.grid.vFixed)
+                    if (config.grid.fixedOriginX && config.grid.fixedOriginY)
                         printf(", ");
-                    if (config.grid.vFixed) {
+                    if (config.grid.fixedOriginY) {
                         switch (config.yDirection) {
                             case YDirection::BOTTOM_UP:
                                 printf("Y = %.9g", uniformOriginY);
@@ -1237,9 +1237,9 @@ int main(int argc, const char * const *argv) {
         if (packingStyle == PackingStyle::GRID) {
             gridMetrics.cellWidth = config.grid.cellWidth, gridMetrics.cellHeight = config.grid.cellHeight;
             gridMetrics.columns = config.grid.cols, gridMetrics.rows = config.grid.rows;
-            if (config.grid.hFixed)
+            if (config.grid.fixedOriginX)
                 gridMetrics.originX = &uniformOriginX;
-            if (config.grid.vFixed)
+            if (config.grid.fixedOriginY)
                 gridMetrics.originY = &uniformOriginY;
             gridMetrics.padding = padding;
             jsonMetrics.grid = &gridMetrics;

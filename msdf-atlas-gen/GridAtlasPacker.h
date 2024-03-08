@@ -45,6 +45,9 @@ public:
     void setPixelRange(double pxRange);
     /// Sets the miter limit for bounds computation
     void setMiterLimit(double miterLimit);
+    /// Sets whether each glyph's origin point should stay aligned with the pixel grid
+    void setOriginPixelAlignment(bool align);
+    void setOriginPixelAlignment(bool alignX, bool alignY);
 
     /// Outputs the atlas's final dimensions
     void getDimensions(int &width, int &height) const;
@@ -71,6 +74,7 @@ private:
     double unitRange;
     double pxRange;
     double miterLimit;
+    bool pxAlignOriginX, pxAlignOriginY;
     double scaleMaximizationTolerance;
     double alignedColumnsBias;
 

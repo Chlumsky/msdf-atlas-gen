@@ -102,7 +102,7 @@ In that case, these additional options are available to customize the layout:
 - `-uniformcols <N>` &ndash; sets the number of columns
 - `-uniformcell <width> <height>` &ndash; sets the dimensions of the grid's cells
 - `-uniformcellconstraint <none / pots / potr / square / square2 / square4>` &ndash; sets constraint for cell dimensions (see explanation of options above)
-- `-uniformorigin <yes / no / horizontal / vertical>` &ndash; sets whether the glyph's origin point should be fixed at the same position in each cell
+- `-uniformorigin <off / on / horizontal / vertical>` &ndash; sets whether the glyph's origin point should be fixed at the same position in each cell
 
 ### Outputs
 
@@ -120,7 +120,7 @@ Any non-empty subset of the following may be specified:
 - `-minsize <em size>` &ndash; sets the minimum size. The largest possible size that fits the same atlas dimensions will be used
 - `-emrange <em range>` &ndash; sets the distance field range in em's
 - `-pxrange <pixel range>` (default = 2) &ndash; sets the distance field range in output pixels
-- `-pxalign <on / off / horizontal / vertical>` (default = vertical) &ndash; enables or disables alignment of glyph's origin point with the pixel grid
+- `-pxalign <off / on / horizontal / vertical>` (default = vertical) &ndash; enables or disables alignment of glyph's origin point with the pixel grid
 
 ### Distance field generator settings
 

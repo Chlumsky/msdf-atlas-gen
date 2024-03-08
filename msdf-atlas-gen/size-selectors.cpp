@@ -15,7 +15,7 @@ SquareSizeSelector<MULTIPLE>::SquareSizeSelector(int minArea) : lowerBound(0), u
 template <int MULTIPLE>
 void SquareSizeSelector<MULTIPLE>::updateCurrent() {
     if (upperBound < 0)
-        current = 5*lowerBound/4+16/MULTIPLE;
+        current = 5*lowerBound/4+16/MULTIPLE+1;
     else
         current = lowerBound+(upperBound-lowerBound)/2;
 }

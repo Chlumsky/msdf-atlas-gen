@@ -51,11 +51,11 @@ void GlyphGeometry::edgeColoring(void (*fn)(msdfgen::Shape &, double, unsigned l
     fn(shape, angleThreshold, seed);
 }
 
-void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool alignOrigin) {
-    wrapBox(scale, range, miterLimit, alignOrigin, alignOrigin);
+void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool pxAlignOrigin) {
+    wrapBox(scale, range, miterLimit, pxAlignOrigin, pxAlignOrigin);
 }
 
-void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool alignOriginX, bool alignOriginY) {
+void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool pxAlignOriginX, bool pxAlignOriginY) {
     scale *= geometryScale;
     range /= geometryScale;
     box.range = range;
@@ -66,7 +66,7 @@ void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool 
         r += .5*range, t += .5*range;
         if (miterLimit > 0)
             shape.boundMiters(l, b, r, t, .5*range, miterLimit, 1);
-        if (alignOriginX) {
+        if (pxAlignOriginX) {
             int sl = (int) floor(scale*l-.5);
             int sr = (int) ceil(scale*r+.5);
             box.rect.w = sr-sl;
@@ -76,7 +76,7 @@ void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool 
             box.rect.w = (int) ceil(w)+1;
             box.translate.x = -l+.5*(box.rect.w-w)/scale;
         }
-        if (alignOriginY) {
+        if (pxAlignOriginY) {
             int sb = (int) floor(scale*b-.5);
             int st = (int) ceil(scale*t+.5);
             box.rect.h = st-sb;
@@ -92,7 +92,11 @@ void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool 
     }
 }
 
-void GlyphGeometry::frameBox(double scale, double range, double miterLimit, int width, int height, const double *fixedX, const double *fixedY) {
+void GlyphGeometry::frameBox(double scale, double range, double miterLimit, int width, int height, const double *fixedX, const double *fixedY, bool pxAlignOrigin) {
+    frameBox(scale, range, miterLimit, width, height, fixedX, fixedY, pxAlignOrigin, pxAlignOrigin);
+}
+
+void GlyphGeometry::frameBox(double scale, double range, double miterLimit, int width, int height, const double *fixedX, const double *fixedY, bool pxAlignOriginX, bool pxAlignOriginY) {
     scale *= geometryScale;
     range /= geometryScale;
     box.range = range;
@@ -110,13 +114,21 @@ void GlyphGeometry::frameBox(double scale, double range, double miterLimit, int 
             shape.boundMiters(l, b, r, t, .5*range, miterLimit, 1);
         if (fixedX)
             box.translate.x = *fixedX/geometryScale;
-        else {
+        else if (pxAlignOriginX) {
+            int sl = (int) floor(scale*l-.5);
+            int sr = (int) ceil(scale*r+.5);
+            box.translate.x = (-sl+(box.rect.w-(sr-sl))/2)/scale;
+        } else {
             double w = scale*(r-l);
             box.translate.x = -l+.5*(box.rect.w-w)/scale;
         }
         if (fixedY)
             box.translate.y = *fixedY/geometryScale;
-        else {
+        else if (pxAlignOriginY) {
+            int sb = (int) floor(scale*b-.5);
+            int st = (int) ceil(scale*t+.5);
+            box.translate.y = (-sb+(box.rect.h-(st-sb))/2)/scale;
+        } else {
             double h = scale*(t-b);
             box.translate.y = -b+.5*(box.rect.h-h)/scale;
         }

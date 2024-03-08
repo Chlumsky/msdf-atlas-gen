@@ -4,7 +4,7 @@
 /*
  * MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR
  * ---------------------------------------------------
- * A utility by Viktor Chlumsky, (c) 2020 - 2023
+ * A utility by Viktor Chlumsky, (c) 2020 - 2024
  * Generates compact bitmap font atlases using MSDFgen
  */
 

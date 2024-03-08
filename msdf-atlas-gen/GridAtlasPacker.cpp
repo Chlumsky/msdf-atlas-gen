@@ -101,6 +101,7 @@ GridAtlasPacker::GridAtlasPacker() :
     unitRange(0),
     pxRange(0),
     miterLimit(0),
+    pxAlignOriginX(false), pxAlignOriginY(false),
     scaleMaximizationTolerance(.001),
     alignedColumnsBias(.125)
 { }
@@ -131,10 +132,15 @@ msdfgen::Shape::Bounds GridAtlasPacker::getMaxBounds(double &maxWidth, double &m
     }
     if (maxBounds.l >= maxBounds.r || maxBounds.b >= maxBounds.t)
         maxBounds = msdfgen::Shape::Bounds();
+    // If origin is pixel-aligned but not fixed, one pixel has to be added to max dimensions to allow for aligning the origin by shifting by < 1 pixel
     if (hFixed)
         maxWidth = maxBounds.r-maxBounds.l;
+    else if (pxAlignOriginX)
+        maxWidth += 1;
     if (vFixed)
         maxHeight = maxBounds.t-maxBounds.b;
+    else if (pxAlignOriginY)
+        maxHeight += 1;
     return maxBounds;
 }
 
@@ -144,6 +150,7 @@ double GridAtlasPacker::scaleToFit(GlyphGeometry *glyphs, int count, int cellWid
         cellWidth = BIG_VALUE;
     if (cellHeight <= 0)
         cellHeight = BIG_VALUE;
+    --cellWidth, --cellHeight; // Implicit half-pixel padding from each side to make sure that no representable values are beyond outermost pixel centers
     cellWidth -= padding, cellHeight -= padding;
     bool lastResult = false;
     #define TRY_FIT(scale) (maxWidth = 0, maxHeight = 0, maxBounds = getMaxBounds(maxWidth, maxHeight, glyphs, count, (scale), unitRange+pxRange/(scale)), lastResult = maxWidth <= cellWidth && maxHeight <= cellHeight)
@@ -169,23 +176,29 @@ double GridAtlasPacker::scaleToFit(GlyphGeometry *glyphs, int count, int cellWid
     return minScale;
 }
 
-// Ultra spaghetti
+// TODO tame spaghetti code
 int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
+    if (!count)
+        return 0;
     bool cellHeightFinal = cellHeight > 0;
     bool explicitRows = rows > 0;
-    int cellCount = count;
-    if (!cellCount)
-        return 0;
-
+    int cellCount = 0;
     if (columns > 0 && rows > 0)
         cellCount = columns*rows;
-    else if (columns > 0)
-        rows = (cellCount+columns-1)/columns;
-    else if (rows > 0)
-        columns = (cellCount+rows-1)/rows;
-    else if (width > 0 && cellWidth > 0) {
-        columns = (width+padding)/cellWidth;
-        rows = (cellCount+columns-1)/columns;
+    else {
+        // Count non-whitespace glyphs only
+        for (const GlyphGeometry *glyph = glyphs, *end = glyphs+count; glyph < end; ++glyph) {
+            if (!glyph->isWhitespace())
+                ++cellCount;
+        }
+        if (columns > 0)
+            rows = (cellCount+columns-1)/columns;
+        else if (rows > 0)
+            columns = (cellCount+rows-1)/rows;
+        else if (width > 0 && cellWidth > 0) {
+            columns = (width+padding)/cellWidth;
+            rows = (cellCount+columns-1)/columns;
+        }
     }
 
     bool dimensionsChanged = false;
@@ -212,14 +225,16 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
     if (dimensionsChanged)
         lowerToConstraint(cellWidth, cellHeight, cellDimensionsConstraint);
 
-    if ((cellWidth > 0 && cellWidth-padding <= pxRange) || (cellHeight > 0 && cellHeight-padding <= pxRange)) // cells definitely too small
+    if ((cellWidth > 0 && cellWidth-padding-1 <= pxRange) || (cellHeight > 0 && cellHeight-padding-1 <= pxRange)) // cells definitely too small
         return -1;
 
+    msdfgen::Shape::Bounds maxBounds = { };
+    double maxWidth = 0, maxHeight = 0;
+
     if (scale <= 0) {
+
         // If both pxRange and miterLimit is non-zero, miter bounds have to be computed for all potential scales
         if (pxRange && miterLimit > 0) {
-            double maxWidth = 0, maxHeight = 0;
-            msdfgen::Shape::Bounds maxBounds;
 
             if (cellWidth > 0 || cellHeight > 0) {
                 scale = scaleToFit(glyphs, count, cellWidth, cellHeight, maxBounds, maxWidth, maxHeight);
@@ -283,8 +298,8 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
 
             else {
                 maxBounds = getMaxBounds(maxWidth, maxHeight, glyphs, count, minScale, unitRange+pxRange/minScale);
-                cellWidth = (int) ceil(maxWidth)+padding;
-                cellHeight = (int) ceil(maxHeight)+padding;
+                cellWidth = (int) ceil(maxWidth)+padding+1;
+                cellHeight = (int) ceil(maxHeight)+padding+1;
                 raiseToConstraint(cellWidth, cellHeight, cellDimensionsConstraint);
                 scale = scaleToFit(glyphs, count, cellWidth, cellHeight, maxBounds, maxWidth, maxHeight);
                 if (scale < minScale)
@@ -292,20 +307,26 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
             }
 
             if (!explicitRows && !cellHeightFinal)
-                cellHeight = (int) ceil(maxHeight)+padding;
-            fixedX = (-maxBounds.l+.5*(cellWidth-padding-maxWidth))/scale;
-            fixedY = (-maxBounds.b+.5*(cellHeight-padding-maxHeight))/scale;
+                cellHeight = (int) ceil(maxHeight)+padding+1;
 
         } else {
 
-            double maxWidth = 0, maxHeight = 0;
-            msdfgen::Shape::Bounds maxBounds = getMaxBounds(maxWidth, maxHeight, glyphs, count, 1, unitRange);
+            maxBounds = getMaxBounds(maxWidth, maxHeight, glyphs, count, 1, unitRange);
+            int hSlack = 0, vSlack = 0;
+            if (pxAlignOriginX && !hFixed) {
+                maxWidth -= 1; // Added by getMaxBounds
+                hSlack = 1;
+            }
+            if (pxAlignOriginY && !vFixed) {
+                maxHeight -= 1; // Added by getMaxBounds
+                vSlack = 1;
+            }
 
             double hScale = 0, vScale = 0;
             if (cellWidth > 0)
-                hScale = (cellWidth-padding-pxRange)/maxWidth;
+                hScale = (cellWidth-hSlack-padding-1-pxRange)/maxWidth;
             if (cellHeight > 0)
-                vScale = (cellHeight-padding-pxRange)/maxHeight;
+                vScale = (cellHeight-vSlack-padding-1-pxRange)/maxHeight;
             if (hScale || vScale) {
                 if (hScale && vScale)
                     scale = std::min(hScale, vScale);
@@ -318,7 +339,7 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
             else if (width > 0 && height > 0) {
                 double bestAlignedScale = 0;
                 int bestCols = 0, bestAlignedCols = 0;
-                // TODO sqrtize
+                // TODO optimize to only test up to sqrt(cellCount) cols and rows like in the above branch (for (int q = (int) sqrt(cellCount)+1; ...)
                 for (int cols = 1; cols < width; ++cols) {
                     int rows = (cellCount+cols-1)/cols;
                     int tWidth = (width+padding)/cols;
@@ -326,8 +347,8 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
                     if (!(tWidth > 0 && tHeight > 0))
                         continue;
                     lowerToConstraint(tWidth, tHeight, cellDimensionsConstraint);
-                    hScale = (tWidth-padding-pxRange)/maxWidth;
-                    vScale = (tHeight-padding-pxRange)/maxHeight;
+                    hScale = (tWidth-hSlack-padding-pxRange)/maxWidth;
+                    vScale = (tHeight-vSlack-padding-pxRange)/maxHeight;
                     double curScale = std::min(hScale, vScale);
                     if (curScale > scale) {
                         scale = curScale;
@@ -354,32 +375,47 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
             }
 
             else {
-                cellWidth = (int) ceil(minScale*maxWidth+pxRange)+padding;
-                cellHeight = (int) ceil(minScale*maxHeight+pxRange)+padding;
+                cellWidth = (int) ceil(minScale*maxWidth+pxRange)+hSlack+padding+1;
+                cellHeight = (int) ceil(minScale*maxHeight+pxRange)+vSlack+padding+1;
                 raiseToConstraint(cellWidth, cellHeight, cellDimensionsConstraint);
-                hScale = (cellWidth-padding-pxRange)/maxWidth;
-                vScale = (cellHeight-padding-pxRange)/maxHeight;
+                hScale = (cellWidth-hSlack-padding-1-pxRange)/maxWidth;
+                vScale = (cellHeight-vSlack-padding-1-pxRange)/maxHeight;
                 scale = std::min(hScale, vScale);
             }
 
             if (!explicitRows && !cellHeightFinal)
-                cellHeight = (int) ceil(scale*maxHeight+pxRange)+padding;
-            fixedX = -maxBounds.l+.5*((cellWidth-padding)/scale-maxWidth);
-            fixedY = -maxBounds.b+.5*((cellHeight-padding)/scale-maxHeight);
+                cellHeight = (int) ceil(scale*maxHeight+pxRange)+vSlack+padding+1;
+            maxBounds.l *= scale, maxBounds.b *= scale;
+            maxBounds.r *= scale, maxBounds.t *= scale;
+            maxWidth *= scale, maxHeight *= scale;
 
         }
-    } else {
-        double maxWidth = 0, maxHeight = 0;
-        msdfgen::Shape::Bounds maxBounds = getMaxBounds(maxWidth, maxHeight, glyphs, count, scale, unitRange+pxRange/scale);
 
+    } else {
+        maxBounds = getMaxBounds(maxWidth, maxHeight, glyphs, count, scale, unitRange+pxRange/scale);
         if (cellWidth < 0 || cellHeight < 0) {
-            cellWidth = (int) ceil(maxWidth)+padding;
-            cellHeight = (int) ceil(maxHeight)+padding;
+            cellWidth = (int) ceil(maxWidth)+padding+1;
+            cellHeight = (int) ceil(maxHeight)+padding+1;
             raiseToConstraint(cellWidth, cellHeight, cellDimensionsConstraint);
         }
+    }
 
-        fixedX = (-maxBounds.l+.5*(cellWidth-padding-maxWidth))/scale;
-        fixedY = (-maxBounds.b+.5*(cellHeight-padding-maxHeight))/scale;
+    // Compute fixed origin
+    if (hFixed) {
+        if (pxAlignOriginX) {
+            int sl = (int) floor(maxBounds.l-.5);
+            int sr = (int) ceil(maxBounds.r+.5);
+            fixedX = (-sl+(cellWidth-padding-(sr-sl))/2)/scale;
+        } else
+            fixedX = (-maxBounds.l+.5*(cellWidth-padding-maxWidth))/scale;
+    }
+    if (vFixed) {
+        if (pxAlignOriginY) {
+            int sb = (int) floor(maxBounds.b-.5);
+            int st = (int) ceil(maxBounds.t+.5);
+            fixedY = (-sb+(cellHeight-padding-(st-sb))/2)/scale;
+        } else
+            fixedY = (-maxBounds.b+.5*(cellHeight-padding-maxHeight))/scale;
     }
 
     if (width < 0 || height < 0) {
@@ -420,7 +456,7 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
     for (GlyphGeometry *glyph = glyphs, *end = glyphs+count; glyph < end; ++glyph) {
         if (!glyph->isWhitespace()) {
             Rectangle rect = { };
-            glyph->frameBox(scale, unitRange+pxRange/scale, miterLimit, cellWidth-padding, cellHeight-padding, hFixed ? &fixedX : nullptr, vFixed ? &fixedY : nullptr);
+            glyph->frameBox(scale, unitRange+pxRange/scale, miterLimit, cellWidth-padding, cellHeight-padding, hFixed ? &fixedX : nullptr, vFixed ? &fixedY : nullptr, pxAlignOriginX, pxAlignOriginY);
             glyph->placeBox(col*cellWidth, height-(row+1)*cellHeight);
             if (++col >= columns) {
                 if (++row >= rows) {
@@ -431,9 +467,6 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
         }
     }
 
-    if (columns*rows < cellCount) {
-        // TODO return lower number
-    }
     return 0;
 }
 
@@ -503,6 +536,14 @@ void GridAtlasPacker::setPixelRange(double pxRange) {
 
 void GridAtlasPacker::setMiterLimit(double miterLimit) {
     this->miterLimit = miterLimit;
+}
+
+void GridAtlasPacker::setOriginPixelAlignment(bool align) {
+    pxAlignOriginX = align, pxAlignOriginY = align;
+}
+
+void GridAtlasPacker::setOriginPixelAlignment(bool alignX, bool alignY) {
+    pxAlignOriginX = alignX, pxAlignOriginY = alignY;
 }
 
 void GridAtlasPacker::getDimensions(int &width, int &height) const {
