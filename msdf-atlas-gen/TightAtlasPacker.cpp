@@ -116,8 +116,6 @@ int TightAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
         scale = packAndScale(glyphs, count);
     if (scale <= 0)
         return -1;
-    pxRange += scale*unitRange;
-    unitRange = 0;
     return 0;
 }
 
@@ -174,7 +172,7 @@ double TightAtlasPacker::getScale() const {
 }
 
 double TightAtlasPacker::getPixelRange() const {
-    return pxRange;
+    return pxRange+scale*unitRange;
 }
 
 }

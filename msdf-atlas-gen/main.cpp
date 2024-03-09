@@ -1123,6 +1123,8 @@ int main(int argc, const char * const *argv) {
                         return 1;
                     }
                 }
+                if (atlasPacker.hasCutoff())
+                    fputs("Warning: Grid cell too constrained to fully fit all glyphs, some may be cut off!\n", stderr);
                 atlasPacker.getDimensions(config.width, config.height);
                 if (!(config.width > 0 && config.height > 0))
                     ABORT("Unable to determine atlas size.");

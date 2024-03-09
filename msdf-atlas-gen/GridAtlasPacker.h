@@ -51,14 +51,20 @@ public:
 
     /// Outputs the atlas's final dimensions
     void getDimensions(int &width, int &height) const;
+    /// Outputs the horizontal and vertical difference between the bottom left corners of consecutive grid cells
     void getCellDimensions(int &width, int &height) const;
+    /// Returns the final number of grid columns
     int getColumns() const;
+    /// Returns the final number of grid rows
     int getRows() const;
     /// Returns the final glyph scale
     double getScale() const;
     /// Returns the final combined pixel range (including converted unit range)
     double getPixelRange() const;
+    /// Outputs the position of the origin within each cell, each value is only valid if the origin is fixed in the respective dimension
     void getFixedOrigin(double &x, double &y);
+    /// Returns true if the explicitly constrained cell dimensions aren't large enough to fit each glyph fully
+    bool hasCutoff() const;
 
 private:
     int columns, rows;
@@ -77,6 +83,7 @@ private:
     bool pxAlignOriginX, pxAlignOriginY;
     double scaleMaximizationTolerance;
     double alignedColumnsBias;
+    bool cutoff;
 
     static void lowerToConstraint(int &width, int &height, DimensionsConstraint constraint);
     static void raiseToConstraint(int &width, int &height, DimensionsConstraint constraint);
