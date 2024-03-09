@@ -15,11 +15,11 @@ bool FontGeometry::GlyphRange::empty() const {
     return glyphs->empty();
 }
 
-const GlyphGeometry * FontGeometry::GlyphRange::begin() const {
+const GlyphGeometry *FontGeometry::GlyphRange::begin() const {
     return glyphs->data()+rangeStart;
 }
 
-const GlyphGeometry * FontGeometry::GlyphRange::end() const {
+const GlyphGeometry *FontGeometry::GlyphRange::end() const {
     return glyphs->data()+rangeEnd;
 }
 
@@ -142,7 +142,7 @@ double FontGeometry::getGeometryScale() const {
     return geometryScale;
 }
 
-const msdfgen::FontMetrics & FontGeometry::getMetrics() const {
+const msdfgen::FontMetrics &FontGeometry::getMetrics() const {
     return metrics;
 }
 
@@ -154,14 +154,14 @@ FontGeometry::GlyphRange FontGeometry::getGlyphs() const {
     return GlyphRange(glyphs, rangeStart, rangeEnd);
 }
 
-const GlyphGeometry * FontGeometry::getGlyph(msdfgen::GlyphIndex index) const {
+const GlyphGeometry *FontGeometry::getGlyph(msdfgen::GlyphIndex index) const {
     std::map<int, size_t>::const_iterator it = glyphsByIndex.find(index.getIndex());
     if (it != glyphsByIndex.end())
         return &(*glyphs)[it->second];
     return nullptr;
 }
 
-const GlyphGeometry * FontGeometry::getGlyph(unicode_t codepoint) const {
+const GlyphGeometry *FontGeometry::getGlyph(unicode_t codepoint) const {
     std::map<unicode_t, size_t>::const_iterator it = glyphsByCodepoint.find(codepoint);
     if (it != glyphsByCodepoint.end())
         return &(*glyphs)[it->second];
@@ -190,11 +190,11 @@ bool FontGeometry::getAdvance(double &advance, unicode_t codepoint1, unicode_t c
     return true;
 }
 
-const std::map<std::pair<int, int>, double> & FontGeometry::getKerning() const {
+const std::map<std::pair<int, int>, double> &FontGeometry::getKerning() const {
     return kerning;
 }
 
-const char * FontGeometry::getName() const {
+const char *FontGeometry::getName() const {
     if (name.empty())
         return nullptr;
     return name.c_str();

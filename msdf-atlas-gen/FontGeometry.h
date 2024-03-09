@@ -25,8 +25,8 @@ public:
         GlyphRange(const std::vector<GlyphGeometry> *glyphs, size_t rangeStart, size_t rangeEnd);
         size_t size() const;
         bool empty() const;
-        const GlyphGeometry * begin() const;
-        const GlyphGeometry * end() const;
+        const GlyphGeometry *begin() const;
+        const GlyphGeometry *end() const;
     private:
         const std::vector<GlyphGeometry> *glyphs;
         size_t rangeStart, rangeEnd;
@@ -55,21 +55,21 @@ public:
     /// Returns the geometry scale to be used when loading glyphs
     double getGeometryScale() const;
     /// Returns the processed font metrics
-    const msdfgen::FontMetrics & getMetrics() const;
+    const msdfgen::FontMetrics &getMetrics() const;
     /// Returns the type of identifier that was used to load glyphs
     GlyphIdentifierType getPreferredIdentifierType() const;
     /// Returns the list of all glyphs
     GlyphRange getGlyphs() const;
     /// Finds a glyph by glyph index or Unicode codepoint, returns null if not found
-    const GlyphGeometry * getGlyph(msdfgen::GlyphIndex index) const;
-    const GlyphGeometry * getGlyph(unicode_t codepoint) const;
+    const GlyphGeometry *getGlyph(msdfgen::GlyphIndex index) const;
+    const GlyphGeometry *getGlyph(unicode_t codepoint) const;
     /// Outputs the advance between two glyphs with kerning taken into consideration, returns false on failure
     bool getAdvance(double &advance, msdfgen::GlyphIndex index1, msdfgen::GlyphIndex index2) const;
     bool getAdvance(double &advance, unicode_t codepoint1, unicode_t codepoint2) const;
     /// Returns the complete mapping of kerning pairs (by glyph indices) and their respective advance values
-    const std::map<std::pair<int, int>, double> & getKerning() const;
+    const std::map<std::pair<int, int>, double> &getKerning() const;
     /// Returns the name associated with the font or null if not set
-    const char * getName() const;
+    const char *getName() const;
 
 private:
     double geometryScale;

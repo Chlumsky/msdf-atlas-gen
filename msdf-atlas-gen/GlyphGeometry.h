@@ -40,9 +40,9 @@ public:
     /// Returns the glyph's geometry scale
     double getGeometryScale() const;
     /// Returns the glyph's shape
-    const msdfgen::Shape & getShape() const;
+    const msdfgen::Shape &getShape() const;
     /// Returns the glyph's shape's raw bounds
-    const msdfgen::Shape::Bounds & getShapeBounds() const;
+    const msdfgen::Shape::Bounds &getShapeBounds() const;
     /// Returns the glyph's advance
     double getAdvance() const;
     /// Returns the glyph's box in the atlas

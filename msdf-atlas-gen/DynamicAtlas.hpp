@@ -80,12 +80,12 @@ typename DynamicAtlas<AtlasGenerator>::ChangeFlags DynamicAtlas<AtlasGenerator>:
 }
 
 template <class AtlasGenerator>
-AtlasGenerator & DynamicAtlas<AtlasGenerator>::atlasGenerator() {
+AtlasGenerator &DynamicAtlas<AtlasGenerator>::atlasGenerator() {
     return generator;
 }
 
 template <class AtlasGenerator>
-const AtlasGenerator & DynamicAtlas<AtlasGenerator>::atlasGenerator() const {
+const AtlasGenerator &DynamicAtlas<AtlasGenerator>::atlasGenerator() const {
     return generator;
 }
 

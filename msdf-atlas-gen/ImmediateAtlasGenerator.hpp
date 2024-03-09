@@ -74,12 +74,12 @@ void ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::setThreadCount(int thr
 }
 
 template <typename T, int N, GeneratorFunction<T, N> GEN_FN, class AtlasStorage>
-const AtlasStorage & ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::atlasStorage() const {
+const AtlasStorage &ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::atlasStorage() const {
     return storage;
 }
 
 template <typename T, int N, GeneratorFunction<T, N> GEN_FN, class AtlasStorage>
-const std::vector<GlyphBox> & ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::getLayout() const {
+const std::vector<GlyphBox> &ImmediateAtlasGenerator<T, N, GEN_FN, AtlasStorage>::getLayout() const {
     return layout;
 }
 

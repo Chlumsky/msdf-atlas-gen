@@ -6,7 +6,7 @@
 
 namespace msdf_atlas {
 
-static const char * const shadronFillGlyphMask = R"(
+static const char *const shadronFillGlyphMask = R"(
 template <ATLAS, RANGE, COLOR>
 glsl vec4 fillGlyph(vec2 texCoord) {
     float fill = texture((ATLAS), texCoord).r;
@@ -14,7 +14,7 @@ glsl vec4 fillGlyph(vec2 texCoord) {
 }
 )";
 
-static const char * const shadronFillGlyphSdf = R"(
+static const char *const shadronFillGlyphSdf = R"(
 template <ATLAS, RANGE, COLOR>
 glsl vec4 fillGlyph(vec2 texCoord) {
     vec3 s = texture((ATLAS), texCoord).rgb;
@@ -24,7 +24,7 @@ glsl vec4 fillGlyph(vec2 texCoord) {
 }
 )";
 
-static const char * const shadronPreviewPreamble = R"(
+static const char *const shadronPreviewPreamble = R"(
 #include <median>
 
 glsl struct GlyphVertex {

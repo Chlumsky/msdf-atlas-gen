@@ -169,11 +169,11 @@ double GlyphGeometry::getGeometryScale() const {
     return geometryScale;
 }
 
-const msdfgen::Shape & GlyphGeometry::getShape() const {
+const msdfgen::Shape &GlyphGeometry::getShape() const {
     return shape;
 }
 
-const msdfgen::Shape::Bounds & GlyphGeometry::getShapeBounds() const {
+const msdfgen::Shape::Bounds &GlyphGeometry::getShapeBounds() const {
     return bounds;
 }
 

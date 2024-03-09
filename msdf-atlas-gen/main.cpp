@@ -46,12 +46,12 @@ using namespace msdf_atlas;
     #define EXTRA_UNDERLINE
 #endif
 
-static const char * const versionText =
+static const char *const versionText =
     "MSDF-Atlas-Gen v" MSDF_ATLAS_VERSION_STRING "\n"
     "  with MSDFgen v" MSDFGEN_VERSION_STRING TITLE_SUFFIX "\n"
     "(c) 2020 - " STRINGIZE(MSDF_ATLAS_COPYRIGHT_YEAR) " Viktor Chlumsky";
 
-static const char * const helpText = R"(
+static const char *const helpText = R"(
 MSDF Atlas Generator by Viktor Chlumsky v)" MSDF_ATLAS_VERSION_STRING R"( (with MSDFgen v)" MSDFGEN_VERSION_STRING TITLE_SUFFIX R"()
 ----------------------------------------------------------------)" VERSION_UNDERLINE EXTRA_UNDERLINE R"(
 
@@ -221,7 +221,7 @@ static bool cmpExtension(const char *path, const char *ext) {
     return true;
 }
 
-static msdfgen::FontHandle * loadVarFont(msdfgen::FreetypeHandle *library, const char *filename) {
+static msdfgen::FontHandle *loadVarFont(msdfgen::FreetypeHandle *library, const char *filename) {
     std::string buffer;
     while (*filename && *filename != '?')
         buffer.push_back(*filename++);
@@ -322,7 +322,7 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
     return success;
 }
 
-int main(int argc, const char * const *argv) {
+int main(int argc, const char *const *argv) {
     #define ABORT(msg) do { fputs(msg "\n", stderr); return 1; } while (false)
 
     int result = 0;

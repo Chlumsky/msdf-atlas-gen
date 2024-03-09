@@ -12,8 +12,8 @@ class SquareSizeSelector {
 public:
     explicit SquareSizeSelector(int minArea = 0);
     bool operator()(int &width, int &height) const;
-    SquareSizeSelector<MULTIPLE> & operator++();
-    SquareSizeSelector<MULTIPLE> & operator--();
+    SquareSizeSelector<MULTIPLE> &operator++();
+    SquareSizeSelector<MULTIPLE> &operator--();
 
 private:
     int lowerBound, upperBound;
@@ -29,8 +29,8 @@ class SquarePowerOfTwoSizeSelector {
 public:
     explicit SquarePowerOfTwoSizeSelector(int minArea = 0);
     bool operator()(int &width, int &height) const;
-    SquarePowerOfTwoSizeSelector & operator++();
-    SquarePowerOfTwoSizeSelector & operator--();
+    SquarePowerOfTwoSizeSelector &operator++();
+    SquarePowerOfTwoSizeSelector &operator--();
 
 private:
     int side;
@@ -43,8 +43,8 @@ class PowerOfTwoSizeSelector {
 public:
     explicit PowerOfTwoSizeSelector(int minArea = 0);
     bool operator()(int &width, int &height) const;
-    PowerOfTwoSizeSelector & operator++();
-    PowerOfTwoSizeSelector & operator--();
+    PowerOfTwoSizeSelector &operator++();
+    PowerOfTwoSizeSelector &operator--();
 
 private:
     int w, h;

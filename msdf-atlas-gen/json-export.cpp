@@ -40,7 +40,7 @@ static std::string escapeJsonString(const char *str) {
     return outStr;
 }
 
-static const char * imageTypeString(ImageType type) {
+static const char *imageTypeString(ImageType type) {
     switch (type) {
         case ImageType::HARD_MASK:
             return "hardmask";
