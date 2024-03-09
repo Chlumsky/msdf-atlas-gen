@@ -24,8 +24,8 @@ public:
     void unsetDimensions();
     /// Sets the constraint to be used when determining dimensions
     void setDimensionsConstraint(DimensionsConstraint dimensionsConstraint);
-    /// Sets the padding between glyph boxes
-    void setPadding(int padding);
+    /// Sets the spacing between glyph boxes
+    void setSpacing(int spacing);
     /// Sets fixed glyph scale
     void setScale(double scale);
     /// Sets the minimum glyph scale
@@ -49,7 +49,7 @@ public:
 
 private:
     int width, height;
-    int padding;
+    int spacing;
     DimensionsConstraint dimensionsConstraint;
     double scale;
     double minScale;

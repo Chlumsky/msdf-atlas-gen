@@ -18,35 +18,35 @@ static void copyRectanglePlacement(OrientedRectangle &dst, const OrientedRectang
 }
 
 template <typename RectangleType>
-int packRectangles(RectangleType *rectangles, int count, int width, int height, int padding) {
-    if (padding)
+int packRectangles(RectangleType *rectangles, int count, int width, int height, int spacing) {
+    if (spacing)
         for (int i = 0; i < count; ++i) {
-            rectangles[i].w += padding;
-            rectangles[i].h += padding;
+            rectangles[i].w += spacing;
+            rectangles[i].h += spacing;
         }
-    int result = RectanglePacker(width+padding, height+padding).pack(rectangles, count);
-    if (padding)
+    int result = RectanglePacker(width+spacing, height+spacing).pack(rectangles, count);
+    if (spacing)
         for (int i = 0; i < count; ++i) {
-            rectangles[i].w -= padding;
-            rectangles[i].h -= padding;
+            rectangles[i].w -= spacing;
+            rectangles[i].h -= spacing;
         }
     return result;
 }
 
 template <class SizeSelector, typename RectangleType>
-std::pair<int, int> packRectangles(RectangleType *rectangles, int count, int padding) {
+std::pair<int, int> packRectangles(RectangleType *rectangles, int count, int spacing) {
     std::vector<RectangleType> rectanglesCopy(count);
     int totalArea = 0;
     for (int i = 0; i < count; ++i) {
-        rectanglesCopy[i].w = rectangles[i].w+padding;
-        rectanglesCopy[i].h = rectangles[i].h+padding;
+        rectanglesCopy[i].w = rectangles[i].w+spacing;
+        rectanglesCopy[i].h = rectangles[i].h+spacing;
         totalArea += rectangles[i].w*rectangles[i].h;
     }
     std::pair<int, int> dimensions;
     SizeSelector sizeSelector(totalArea);
     int width, height;
     while (sizeSelector(width, height)) {
-        if (!RectanglePacker(width+padding, height+padding).pack(rectanglesCopy.data(), count)) {
+        if (!RectanglePacker(width+spacing, height+spacing).pack(rectanglesCopy.data(), count)) {
             dimensions.first = width;
             dimensions.second = height;
             for (int i = 0; i < count; ++i)

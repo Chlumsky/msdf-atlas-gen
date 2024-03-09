@@ -10,7 +10,7 @@ namespace msdf_atlas {
 
 TightAtlasPacker::TightAtlasPacker() :
     width(-1), height(-1),
-    padding(0),
+    spacing(0),
     dimensionsConstraint(DimensionsConstraint::POWER_OF_TWO_SQUARE),
     scale(-1),
     minScale(1),
@@ -50,27 +50,27 @@ int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstr
         std::pair<int, int> dimensions = std::make_pair(width, height);
         switch (dimensionsConstraint) {
             case DimensionsConstraint::POWER_OF_TWO_SQUARE:
-                dimensions = packRectangles<SquarePowerOfTwoSizeSelector>(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<SquarePowerOfTwoSizeSelector>(rectangles.data(), rectangles.size(), spacing);
                 break;
             case DimensionsConstraint::POWER_OF_TWO_RECTANGLE:
-                dimensions = packRectangles<PowerOfTwoSizeSelector>(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<PowerOfTwoSizeSelector>(rectangles.data(), rectangles.size(), spacing);
                 break;
             case DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE:
-                dimensions = packRectangles<SquareSizeSelector<4> >(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<SquareSizeSelector<4> >(rectangles.data(), rectangles.size(), spacing);
                 break;
             case DimensionsConstraint::EVEN_SQUARE:
-                dimensions = packRectangles<SquareSizeSelector<2> >(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<SquareSizeSelector<2> >(rectangles.data(), rectangles.size(), spacing);
                 break;
             case DimensionsConstraint::SQUARE:
             default:
-                dimensions = packRectangles<SquareSizeSelector<> >(rectangles.data(), rectangles.size(), padding);
+                dimensions = packRectangles<SquareSizeSelector<> >(rectangles.data(), rectangles.size(), spacing);
                 break;
         }
         if (!(dimensions.first > 0 && dimensions.second > 0))
             return -1;
         width = dimensions.first, height = dimensions.second;
     } else {
-        if (int result = packRectangles(rectangles.data(), rectangles.size(), width, height, padding))
+        if (int result = packRectangles(rectangles.data(), rectangles.size(), width, height, spacing))
             return result;
     }
     // Set glyph box placement
@@ -131,8 +131,8 @@ void TightAtlasPacker::setDimensionsConstraint(DimensionsConstraint dimensionsCo
     this->dimensionsConstraint = dimensionsConstraint;
 }
 
-void TightAtlasPacker::setPadding(int padding) {
-    this->padding = padding;
+void TightAtlasPacker::setSpacing(int spacing) {
+    this->spacing = spacing;
 }
 
 void TightAtlasPacker::setScale(double scale) {

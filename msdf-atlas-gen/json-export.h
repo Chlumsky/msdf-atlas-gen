@@ -13,7 +13,7 @@ struct JsonAtlasMetrics {
         int cellWidth, cellHeight;
         int columns, rows;
         const double *originX, *originY;
-        int padding;
+        int spacing;
     };
     double distanceRange;
     double size;

@@ -929,8 +929,8 @@ int main(int argc, const char *const *argv) {
         config.imageFormat == ImageFormat::BINARY_FLOAT ||
         config.imageFormat == ImageFormat::BINARY_FLOAT_BE
     );
-    // TODO: In this case (if padding is -1), the border pixels of each glyph are black, but still computed. For floating-point output, this may play a role.
-    int padding = config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF ? 0 : -1;
+    // TODO: In this case (if spacing is -1), the border pixels of each glyph are black, but still computed. For floating-point output, this may play a role.
+    int spacing = config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF ? 0 : -1;
     double uniformOriginX, uniformOriginY;
 
     // Load fonts
@@ -1064,7 +1064,7 @@ int main(int argc, const char *const *argv) {
                     atlasPacker.setDimensions(fixedWidth, fixedHeight);
                 else
                     atlasPacker.setDimensionsConstraint(atlasSizeConstraint);
-                atlasPacker.setPadding(padding);
+                atlasPacker.setSpacing(spacing);
                 if (fixedScale)
                     atlasPacker.setScale(config.emSize);
                 else
@@ -1106,7 +1106,7 @@ int main(int argc, const char *const *argv) {
                     atlasPacker.setDimensions(fixedWidth, fixedHeight);
                 else
                     atlasPacker.setDimensionsConstraint(atlasSizeConstraint);
-                atlasPacker.setPadding(padding);
+                atlasPacker.setSpacing(spacing);
                 if (fixedScale)
                     atlasPacker.setScale(config.emSize);
                 else
@@ -1148,7 +1148,7 @@ int main(int argc, const char *const *argv) {
                                 printf("Y = %.9g", uniformOriginY);
                                 break;
                             case YDirection::TOP_DOWN:
-                                printf("Y = %.9g", (config.grid.cellHeight-padding-1)/config.emSize-uniformOriginY);
+                                printf("Y = %.9g", (config.grid.cellHeight-spacing-1)/config.emSize-uniformOriginY);
                                 break;
                         }
                     }
@@ -1243,7 +1243,7 @@ int main(int argc, const char *const *argv) {
                 gridMetrics.originX = &uniformOriginX;
             if (config.grid.fixedOriginY)
                 gridMetrics.originY = &uniformOriginY;
-            gridMetrics.padding = padding;
+            gridMetrics.spacing = spacing;
             jsonMetrics.grid = &gridMetrics;
         }
         if (exportJSON(fonts.data(), fonts.size(), config.imageType, jsonMetrics, config.jsonFilename, config.kerning))

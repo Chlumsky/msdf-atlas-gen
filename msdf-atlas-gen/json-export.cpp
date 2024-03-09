@@ -87,7 +87,7 @@ bool exportJSON(const FontGeometry *fonts, int fontCount, ImageType imageType, c
                         fprintf(f, ",\"originY\":%.17g", *metrics.grid->originY);
                         break;
                     case YDirection::TOP_DOWN:
-                        fprintf(f, ",\"originY\":%.17g", (metrics.grid->cellHeight-metrics.grid->padding-1)/metrics.size-*metrics.grid->originY);
+                        fprintf(f, ",\"originY\":%.17g", (metrics.grid->cellHeight-metrics.grid->spacing-1)/metrics.size-*metrics.grid->originY);
                         break;
                 }
             }

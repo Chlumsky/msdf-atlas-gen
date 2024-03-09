@@ -37,7 +37,7 @@ public:
 
 private:
     int side;
-    int padding;
+    int spacing;
     int glyphCount;
     int totalArea;
     RectanglePacker packer;

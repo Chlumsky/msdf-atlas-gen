@@ -14,14 +14,14 @@ static int ceilPOT(int x) {
 }
 
 template <class AtlasGenerator>
-DynamicAtlas<AtlasGenerator>::DynamicAtlas() : side(0), padding(0), glyphCount(0), totalArea(0) { }
+DynamicAtlas<AtlasGenerator>::DynamicAtlas() : side(0), spacing(0), glyphCount(0), totalArea(0) { }
 
 template <class AtlasGenerator>
 template <typename... ARGS>
-DynamicAtlas<AtlasGenerator>::DynamicAtlas(int minSide, ARGS... args) : side(ceilPOT(minSide)), padding(0), glyphCount(0), totalArea(0), packer(side+padding, side+padding), generator(side, side, args...) { }
+DynamicAtlas<AtlasGenerator>::DynamicAtlas(int minSide, ARGS... args) : side(ceilPOT(minSide)), spacing(0), glyphCount(0), totalArea(0), packer(side+spacing, side+spacing), generator(side, side, args...) { }
 
 template <class AtlasGenerator>
-DynamicAtlas<AtlasGenerator>::DynamicAtlas(AtlasGenerator &&generator) : side(0), padding(0), glyphCount(0), totalArea(0), generator((AtlasGenerator &&) generator) { }
+DynamicAtlas<AtlasGenerator>::DynamicAtlas(AtlasGenerator &&generator) : side(0), spacing(0), glyphCount(0), totalArea(0), generator((AtlasGenerator &&) generator) { }
 
 template <class AtlasGenerator>
 typename DynamicAtlas<AtlasGenerator>::ChangeFlags DynamicAtlas<AtlasGenerator>::add(GlyphGeometry *glyphs, int count, bool allowRearrange) {
@@ -31,14 +31,14 @@ typename DynamicAtlas<AtlasGenerator>::ChangeFlags DynamicAtlas<AtlasGenerator>:
         if (!glyphs[i].isWhitespace()) {
             int w, h;
             glyphs[i].getBoxSize(w, h);
-            Rectangle rect = { 0, 0, w+padding, h+padding };
+            Rectangle rect = { 0, 0, w+spacing, h+spacing };
             rectangles.push_back(rect);
             Remap remapEntry = { };
             remapEntry.index = glyphCount+i;
             remapEntry.width = w;
             remapEntry.height = h;
             remapBuffer.push_back(remapEntry);
-            totalArea += (w+padding)*(h+padding);
+            totalArea += (w+spacing)*(h+spacing);
         }
     }
     if ((int) rectangles.size() > start) {
@@ -49,10 +49,10 @@ typename DynamicAtlas<AtlasGenerator>::ChangeFlags DynamicAtlas<AtlasGenerator>:
             while (side*side < totalArea)
                 side <<= 1;
             if (allowRearrange) {
-                packer = RectanglePacker(side+padding, side+padding);
+                packer = RectanglePacker(side+spacing, side+spacing);
                 packerStart = 0;
             } else {
-                packer.expand(side+padding, side+padding);
+                packer.expand(side+spacing, side+spacing);
                 packerStart = rectangles.size()-remaining;
             }
             changeFlags |= RESIZED;
