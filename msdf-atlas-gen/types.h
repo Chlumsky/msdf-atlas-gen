@@ -16,7 +16,7 @@ enum class ImageType {
     SOFT_MASK,
     /// Signed (true) distance field
     SDF,
-    /// Signed pseudo-distance field
+    /// Signed perpendicular distance field
     PSDF,
     /// Multi-channel signed distance field
     MSDF,

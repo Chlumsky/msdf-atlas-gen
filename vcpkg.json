@@ -7,7 +7,6 @@
     "license": "MIT",
     "dependencies": [
         "freetype",
-        "tinyxml2",
         "libpng"
     ],
     "default-features": [

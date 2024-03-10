@@ -57,9 +57,13 @@ MSDF Atlas Generator by Viktor Chlumsky v)" MSDF_ATLAS_VERSION_STRING R"( (with 
 
 INPUT SPECIFICATION
   -font <filename.ttf/otf>
-      Specifies the input TrueType / OpenType font file. A font specification is required.
+      Specifies the input TrueType / OpenType font file. A font specification is required.)"
+#ifndef MSDFGEN_DISABLE_VARIABLE_FONTS
+R"(
   -varfont <filename.ttf/otf?var0=value0&var1=value1>
-      Specifies an input variable font file and configures its variables.
+      Specifies an input variable font file and configures its variables.)"
+#endif
+R"(
   -charset <filename>
       Specifies the input character set. Refer to the documentation for format of charset specification. Defaults to ASCII.
   -glyphset <filename>
@@ -76,7 +80,13 @@ INPUT SPECIFICATION
 ATLAS CONFIGURATION
   -type <hardmask / softmask / sdf / psdf / msdf / mtsdf>
       Selects the type of atlas to be generated.
-  -format <png / bmp / tiff / text / textfloat / bin / binfloat / binfloatbe>
+)"
+#ifndef MSDFGEN_DISABLE_PNG
+R"(  -format <png / bmp / tiff / text / textfloat / bin / binfloat / binfloatbe>)"
+#else
+R"(  -format <bmp / tiff / text / textfloat / bin / binfloat / binfloatbe>)"
+#endif
+R"(
       Selects the format for the atlas image output. Some image formats may be incompatible with embedded output formats.
   -dimensions <width> <height>
       Sets the atlas to have fixed dimensions (width x height).
@@ -90,9 +100,9 @@ ATLAS CONFIGURATION
     -uniformcell <width> <height>
         Sets fixed dimensions of the grid's cells.
     -uniformcellconstraint <none / pots / potr / square / square2 / square4>
-        Constrains cell dimensions to the given rule (see -pots / ... above)
+        Constrains cell dimensions to the given rule (see -pots / ... above).
     -uniformorigin <off / on / horizontal / vertical>
-        Sets whether the glyph's origin point should be fixed at the same position in each cell
+        Sets whether the glyph's origin point should be fixed at the same position in each cell.
   -yorigin <bottom / top>
       Determines whether the Y-axis is oriented upwards (bottom origin, default) or downwards (top origin).
 
@@ -228,6 +238,7 @@ static bool strStartsWith(const char *str, const char *prefix) {
     return true;
 }
 
+#ifndef MSDFGEN_DISABLE_VARIABLE_FONTS
 static msdfgen::FontHandle *loadVarFont(msdfgen::FreetypeHandle *library, const char *filename) {
     std::string buffer;
     while (*filename && *filename != '?')
@@ -250,6 +261,7 @@ static msdfgen::FontHandle *loadVarFont(msdfgen::FreetypeHandle *library, const 
     }
     return font;
 }
+#endif
 
 struct FontInput {
     const char *fontFilename;
@@ -406,9 +418,12 @@ int main(int argc, const char *const *argv) {
             continue;
         }
         ARG_CASE("-format", 1) {
-            if (ARG_IS("png"))
-                config.imageFormat = ImageFormat::PNG;
-            else if (ARG_IS("bmp"))
+            #ifndef MSDFGEN_DISABLE_PNG
+                if (ARG_IS("png"))
+                    config.imageFormat = ImageFormat::PNG;
+                else
+            #endif
+            if (ARG_IS("bmp"))
                 config.imageFormat = ImageFormat::BMP;
             else if (ARG_IS("tiff"))
                 config.imageFormat = ImageFormat::TIFF;
@@ -422,8 +437,13 @@ int main(int argc, const char *const *argv) {
                 config.imageFormat = ImageFormat::BINARY_FLOAT;
             else if (ARG_IS("binfloatbe"))
                 config.imageFormat = ImageFormat::BINARY_FLOAT_BE;
-            else
-                ABORT("Invalid image format. Valid formats are: png, bmp, tiff, text, textfloat, bin, binfloat");
+            else {
+                #ifndef MSDFGEN_DISABLE_PNG
+                    ABORT("Invalid image format. Valid formats are: png, bmp, tiff, text, textfloat, bin, binfloat");
+                #else
+                    ABORT("Invalid image format. Valid formats are: bmp, tiff, text, textfloat, bin, binfloat");
+                #endif
+            }
             imageFormatName = arg;
             ++argPos;
             continue;
@@ -433,11 +453,13 @@ int main(int argc, const char *const *argv) {
             fontInput.variableFont = false;
             continue;
         }
+    #ifndef MSDFGEN_DISABLE_VARIABLE_FONTS
         ARG_CASE("-varfont", 1) {
             fontInput.fontFilename = argv[argPos++];
             fontInput.variableFont = true;
             continue;
         }
+    #endif
         ARG_CASE("-charset", 1) {
             fontInput.charsetFilename = argv[argPos++];
             fontInput.glyphIdentifierType = GlyphIdentifierType::UNICODE_CODEPOINT;
@@ -845,21 +867,31 @@ int main(int argc, const char *const *argv) {
     // Finalize image format
     ImageFormat imageExtension = ImageFormat::UNSPECIFIED;
     if (config.imageFilename) {
-        if (cmpExtension(config.imageFilename, ".png")) imageExtension = ImageFormat::PNG;
-        else if (cmpExtension(config.imageFilename, ".bmp")) imageExtension = ImageFormat::BMP;
+        if (cmpExtension(config.imageFilename, ".png")) {
+            #ifndef MSDFGEN_DISABLE_PNG
+                imageExtension = ImageFormat::PNG;
+            #else
+                fputs("Warning: You are using a version of this program without PNG image support!\n", stderr);
+            #endif
+        } else if (cmpExtension(config.imageFilename, ".bmp")) imageExtension = ImageFormat::BMP;
         else if (cmpExtension(config.imageFilename, ".tif") || cmpExtension(config.imageFilename, ".tiff")) imageExtension = ImageFormat::TIFF;
         else if (cmpExtension(config.imageFilename, ".txt")) imageExtension = ImageFormat::TEXT;
         else if (cmpExtension(config.imageFilename, ".bin")) imageExtension = ImageFormat::BINARY;
     }
     if (config.imageFormat == ImageFormat::UNSPECIFIED) {
-        config.imageFormat = ImageFormat::PNG;
-        imageFormatName = "png";
+        #ifndef MSDFGEN_DISABLE_PNG
+            config.imageFormat = ImageFormat::PNG;
+            imageFormatName = "png";
+        #else
+            config.imageFormat = ImageFormat::TIFF;
+            imageFormatName = "tiff";
+        #endif
         // If image format is not specified and -imageout is the only image output, infer format from its extension
         if (!config.arteryFontFilename) {
             if (imageExtension != ImageFormat::UNSPECIFIED)
                 config.imageFormat = imageExtension;
             else if (config.imageFilename)
-                fputs("Warning: Could not infer image format from file extension, PNG will be used.\n", stderr);
+                fprintf(stderr, "Warning: Could not infer image format from file extension, %s will be used.\n", imageFormatName);
         }
     }
     if (config.imageType == ImageType::MTSDF && config.imageFormat == ImageFormat::BMP)
@@ -926,7 +958,12 @@ int main(int argc, const char *const *argv) {
                         return true;
                     if (font)
                         msdfgen::destroyFont(font);
-                    if ((font = isVarFont ? loadVarFont(ft, fontFilename) : msdfgen::loadFont(ft, fontFilename))) {
+                    if ((font = (
+                        #ifndef MSDFGEN_DISABLE_VARIABLE_FONTS
+                            isVarFont ? loadVarFont(ft, fontFilename) :
+                        #endif
+                        msdfgen::loadFont(ft, fontFilename)
+                    ))) {
                         this->fontFilename = fontFilename;
                         return true;
                     }

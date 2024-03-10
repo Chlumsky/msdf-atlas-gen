@@ -14,7 +14,7 @@ void sdfGenerator(const msdfgen::BitmapRef<float, 1> &output, const GlyphGeometr
 }
 
 void psdfGenerator(const msdfgen::BitmapRef<float, 1> &output, const GlyphGeometry &glyph, const GeneratorAttributes &attribs) {
-    msdfgen::generatePseudoSDF(output, glyph.getShape(), glyph.getBoxProjection(), glyph.getBoxRange(), attribs.config);
+    msdfgen::generatePSDF(output, glyph.getShape(), glyph.getBoxProjection(), glyph.getBoxRange(), attribs.config);
     if (attribs.scanlinePass)
         msdfgen::distanceSignCorrection(output, glyph.getShape(), glyph.getBoxProjection(), MSDF_ATLAS_GLYPH_FILL_RULE);
 }

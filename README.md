@@ -27,8 +27,8 @@ The atlas generator can generate the following six types of atlases.
 
 Notes:
 - *Sharp corners* refers to preservation of corner sharpness when upscaled.
-- *Soft effects* refers to the support of effects that use true distance, such as glows, rounded borders, or simplified shadows.
-- *Hard effects* refers to the support of effects that use pseudo-distance, such as mitered borders or thickness adjustment.
+- *Soft effects* refers to the support of effects that use true distance, such as glows, rounded outlines, or simplified shadows.
+- *Hard effects* refers to the support of effects that use perpendicular distance, such as mitered outlines or thickness adjustment.
 
 ## Getting started
 
@@ -63,7 +63,7 @@ Use the following command line arguments for the standalone version of the atlas
 - `hardmask` &ndash; a non-anti-aliased binary image
 - `softmask` &ndash; an anti-aliased image
 - `sdf` &ndash; a true signed distance field (SDF)
-- `psdf` &ndash; a pseudo-distance field
+- `psdf` &ndash; a signed perpendicular distance field (PSDF)
 - `msdf` (default) &ndash; a multi-channel signed distance field (MSDF)
 - `mtsdf` &ndash; a combination of MSDF and true SDF in the alpha channel
 

@@ -2,8 +2,11 @@
 include(CMakeFindDependencyMacro)
 
 set(MSDF_ATLAS_STANDALONE_AVAILABLE @MSDF_ATLAS_BUILD_STANDALONE@)
+set(MSDF_ATLAS_NO_PNG @MSDFGEN_DISABLE_PNG@)
 
-find_dependency(PNG REQUIRED)
+if(NOT MSDF_ATLAS_NO_PNG)
+    find_dependency(PNG REQUIRED)
+endif()
 find_dependency(msdfgen REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/msdf-atlas-gen-targets.cmake")

@@ -15,7 +15,7 @@ namespace msdf_atlas {
 void scanlineGenerator(const msdfgen::BitmapRef<float, 1> &output, const GlyphGeometry &glyph, const GeneratorAttributes &attribs);
 /// Generates a true signed distance field of the glyph
 void sdfGenerator(const msdfgen::BitmapRef<float, 1> &output, const GlyphGeometry &glyph, const GeneratorAttributes &attribs);
-/// Generates a signed pseudo-distance field of the glyph
+/// Generates a signed perpendicular distance field of the glyph
 void psdfGenerator(const msdfgen::BitmapRef<float, 1> &output, const GlyphGeometry &glyph, const GeneratorAttributes &attribs);
 /// Generates a multi-channel signed distance field of the glyph
 void msdfGenerator(const msdfgen::BitmapRef<float, 3> &output, const GlyphGeometry &glyph, const GeneratorAttributes &attribs);

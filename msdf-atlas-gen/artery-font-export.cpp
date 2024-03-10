@@ -134,12 +134,14 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
         image.channels = N;
         image.imageType = convertImageType(properties.imageType);
         switch (properties.imageFormat) {
+        #ifndef MSDFGEN_DISABLE_PNG
             case ImageFormat::PNG:
                 image.encoding = artery_font::IMAGE_PNG;
                 image.pixelFormat = artery_font::PIXEL_UNSIGNED8;
                 if (!encodePng((std::vector<byte> &) image.data, atlas))
                     return false;
                 break;
+        #endif
             case ImageFormat::TIFF:
                 image.encoding = artery_font::IMAGE_TIFF;
                 image.pixelFormat = artery_font::PIXEL_FLOAT32;
