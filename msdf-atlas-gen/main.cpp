@@ -221,6 +221,13 @@ static bool cmpExtension(const char *path, const char *ext) {
     return true;
 }
 
+static bool strStartsWith(const char *str, const char *prefix) {
+    while (*prefix)
+        if (*str++ != *prefix++)
+            return false;
+    return true;
+}
+
 static msdfgen::FontHandle *loadVarFont(msdfgen::FreetypeHandle *library, const char *filename) {
     std::string buffer;
     while (*filename && *filename != '?')
@@ -371,25 +378,27 @@ int main(int argc, const char *const *argv) {
     bool explicitErrorCorrectionMode = false;
     while (argPos < argc) {
         const char *arg = argv[argPos];
-        #define ARG_CASE(s, p) if (!strcmp(arg, s) && argPos+(p) < argc)
+        #define ARG_CASE(s, p) if ((!strcmp(arg, s)) && argPos+(p) < argc && (++argPos, true))
+        #define ARG_CASE_OR ) || !strcmp(arg,
+        #define ARG_IS(s) (!strcmp(argv[argPos], s))
+        #define ARG_PREFIX(s) strStartsWith(argv[argPos], s)
 
         // Accept arguments prefixed with -- instead of -
         if (arg[0] == '-' && arg[1] == '-')
             ++arg;
 
         ARG_CASE("-type", 1) {
-            arg = argv[++argPos];
-            if (!strcmp(arg, "hardmask"))
+            if (ARG_IS("hardmask"))
                 config.imageType = ImageType::HARD_MASK;
-            else if (!strcmp(arg, "softmask"))
+            else if (ARG_IS("softmask"))
                 config.imageType = ImageType::SOFT_MASK;
-            else if (!strcmp(arg, "sdf"))
+            else if (ARG_IS("sdf"))
                 config.imageType = ImageType::SDF;
-            else if (!strcmp(arg, "psdf"))
+            else if (ARG_IS("psdf"))
                 config.imageType = ImageType::PSDF;
-            else if (!strcmp(arg, "msdf"))
+            else if (ARG_IS("msdf"))
                 config.imageType = ImageType::MSDF;
-            else if (!strcmp(arg, "mtsdf"))
+            else if (ARG_IS("mtsdf"))
                 config.imageType = ImageType::MTSDF;
             else
                 ABORT("Invalid atlas type. Valid types are: hardmask, softmask, sdf, psdf, msdf, mtsdf");
@@ -397,22 +406,21 @@ int main(int argc, const char *const *argv) {
             continue;
         }
         ARG_CASE("-format", 1) {
-            arg = argv[++argPos];
-            if (!strcmp(arg, "png"))
+            if (ARG_IS("png"))
                 config.imageFormat = ImageFormat::PNG;
-            else if (!strcmp(arg, "bmp"))
+            else if (ARG_IS("bmp"))
                 config.imageFormat = ImageFormat::BMP;
-            else if (!strcmp(arg, "tiff"))
+            else if (ARG_IS("tiff"))
                 config.imageFormat = ImageFormat::TIFF;
-            else if (!strcmp(arg, "text"))
+            else if (ARG_IS("text"))
                 config.imageFormat = ImageFormat::TEXT;
-            else if (!strcmp(arg, "textfloat"))
+            else if (ARG_IS("textfloat"))
                 config.imageFormat = ImageFormat::TEXT_FLOAT;
-            else if (!strcmp(arg, "bin"))
+            else if (ARG_IS("bin"))
                 config.imageFormat = ImageFormat::BINARY;
-            else if (!strcmp(arg, "binfloat"))
+            else if (ARG_IS("binfloat"))
                 config.imageFormat = ImageFormat::BINARY_FLOAT;
-            else if (!strcmp(arg, "binfloatbe"))
+            else if (ARG_IS("binfloatbe"))
                 config.imageFormat = ImageFormat::BINARY_FLOAT_BE;
             else
                 ABORT("Invalid image format. Valid formats are: png, bmp, tiff, text, textfloat, bin, binfloat");
@@ -421,46 +429,39 @@ int main(int argc, const char *const *argv) {
             continue;
         }
         ARG_CASE("-font", 1) {
-            fontInput.fontFilename = argv[++argPos];
+            fontInput.fontFilename = argv[argPos++];
             fontInput.variableFont = false;
-            ++argPos;
             continue;
         }
         ARG_CASE("-varfont", 1) {
-            fontInput.fontFilename = argv[++argPos];
+            fontInput.fontFilename = argv[argPos++];
             fontInput.variableFont = true;
-            ++argPos;
             continue;
         }
         ARG_CASE("-charset", 1) {
-            fontInput.charsetFilename = argv[++argPos];
+            fontInput.charsetFilename = argv[argPos++];
             fontInput.glyphIdentifierType = GlyphIdentifierType::UNICODE_CODEPOINT;
-            ++argPos;
             continue;
         }
         ARG_CASE("-glyphset", 1) {
-            fontInput.charsetFilename = argv[++argPos];
+            fontInput.charsetFilename = argv[argPos++];
             fontInput.glyphIdentifierType = GlyphIdentifierType::GLYPH_INDEX;
-            ++argPos;
             continue;
         }
         ARG_CASE("-allglyphs", 0) {
             fontInput.charsetFilename = nullptr;
             fontInput.glyphIdentifierType = GlyphIdentifierType::GLYPH_INDEX;
-            ++argPos;
             continue;
         }
         ARG_CASE("-fontscale", 1) {
             double fs;
-            if (!(parseDouble(fs, argv[++argPos]) && fs > 0))
+            if (!(parseDouble(fs, argv[argPos++]) && fs > 0))
                 ABORT("Invalid font scale argument. Use -fontscale <font scale> with a positive real number.");
             fontInput.fontScale = fs;
-            ++argPos;
             continue;
         }
         ARG_CASE("-fontname", 1) {
-            fontInput.fontName = argv[++argPos];
-            ++argPos;
+            fontInput.fontName = argv[argPos++];
             continue;
         }
         ARG_CASE("-and", 0) {
@@ -470,80 +471,67 @@ int main(int argc, const char *const *argv) {
                 ABORT("No changes between subsequent inputs. A different font, character set, or font scale must be set inbetween -and separators.");
             fontInputs.push_back(fontInput);
             fontInput.fontName = nullptr;
-            ++argPos;
             continue;
         }
     #ifndef MSDF_ATLAS_NO_ARTERY_FONT
         ARG_CASE("-arfont", 1) {
-            config.arteryFontFilename = argv[++argPos];
-            ++argPos;
+            config.arteryFontFilename = argv[argPos++];
             continue;
         }
     #endif
         ARG_CASE("-imageout", 1) {
-            config.imageFilename = argv[++argPos];
-            ++argPos;
+            config.imageFilename = argv[argPos++];
             continue;
         }
         ARG_CASE("-json", 1) {
-            config.jsonFilename = argv[++argPos];
-            ++argPos;
+            config.jsonFilename = argv[argPos++];
             continue;
         }
         ARG_CASE("-csv", 1) {
-            config.csvFilename = argv[++argPos];
-            ++argPos;
+            config.csvFilename = argv[argPos++];
             continue;
         }
         ARG_CASE("-shadronpreview", 2) {
-            config.shadronPreviewFilename = argv[++argPos];
-            config.shadronPreviewText = argv[++argPos];
-            ++argPos;
+            config.shadronPreviewFilename = argv[argPos++];
+            config.shadronPreviewText = argv[argPos++];
             continue;
         }
         ARG_CASE("-dimensions", 2) {
             unsigned w, h;
-            if (!(parseUnsigned(w, argv[argPos+1]) && parseUnsigned(h, argv[argPos+2]) && w && h))
+            if (!(parseUnsigned(w, argv[argPos++]) && parseUnsigned(h, argv[argPos++]) && w && h))
                 ABORT("Invalid atlas dimensions. Use -dimensions <width> <height> with two positive integers.");
             fixedWidth = w, fixedHeight = h;
-            argPos += 3;
             continue;
         }
         ARG_CASE("-pots", 0) {
             atlasSizeConstraint = DimensionsConstraint::POWER_OF_TWO_SQUARE;
             fixedWidth = -1, fixedHeight = -1;
-            ++argPos;
             continue;
         }
         ARG_CASE("-potr", 0) {
             atlasSizeConstraint = DimensionsConstraint::POWER_OF_TWO_RECTANGLE;
             fixedWidth = -1, fixedHeight = -1;
-            ++argPos;
             continue;
         }
         ARG_CASE("-square", 0) {
             atlasSizeConstraint = DimensionsConstraint::SQUARE;
             fixedWidth = -1, fixedHeight = -1;
-            ++argPos;
             continue;
         }
         ARG_CASE("-square2", 0) {
             atlasSizeConstraint = DimensionsConstraint::EVEN_SQUARE;
             fixedWidth = -1, fixedHeight = -1;
-            ++argPos;
             continue;
         }
         ARG_CASE("-square4", 0) {
             atlasSizeConstraint = DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
             fixedWidth = -1, fixedHeight = -1;
-            ++argPos;
             continue;
         }
         ARG_CASE("-yorigin", 1) {
-            arg = argv[++argPos];
-            if (!strcmp(arg, "bottom"))
+            if (ARG_IS("bottom"))
                 config.yDirection = YDirection::BOTTOM_UP;
-            else if (!strcmp(arg, "top"))
+            else if (ARG_IS("top"))
                 config.yDirection = YDirection::TOP_DOWN;
             else
                 ABORT("Invalid Y-axis origin. Use bottom or top.");
@@ -552,237 +540,219 @@ int main(int argc, const char *const *argv) {
         }
         ARG_CASE("-size", 1) {
             double s;
-            if (!(parseDouble(s, argv[++argPos]) && s > 0))
+            if (!(parseDouble(s, argv[argPos++]) && s > 0))
                 ABORT("Invalid em size argument. Use -size <em size> with a positive real number.");
             config.emSize = s;
-            ++argPos;
             continue;
         }
         ARG_CASE("-minsize", 1) {
             double s;
-            if (!(parseDouble(s, argv[++argPos]) && s > 0))
+            if (!(parseDouble(s, argv[argPos++]) && s > 0))
                 ABORT("Invalid minimum em size argument. Use -minsize <em size> with a positive real number.");
             minEmSize = s;
-            ++argPos;
             continue;
         }
         ARG_CASE("-emrange", 1) {
             double r;
-            if (!(parseDouble(r, argv[++argPos]) && r >= 0))
+            if (!(parseDouble(r, argv[argPos++]) && r >= 0))
                 ABORT("Invalid range argument. Use -emrange <em range> with a positive real number.");
             rangeMode = RANGE_EM;
             rangeValue = r;
-            ++argPos;
             continue;
         }
         ARG_CASE("-pxrange", 1) {
             double r;
-            if (!(parseDouble(r, argv[++argPos]) && r >= 0))
+            if (!(parseDouble(r, argv[argPos++]) && r >= 0))
                 ABORT("Invalid range argument. Use -pxrange <pixel range> with a positive real number.");
             rangeMode = RANGE_PIXEL;
             rangeValue = r;
-            ++argPos;
             continue;
         }
         ARG_CASE("-pxalign", 1) {
-            if (!strcmp(argv[argPos+1], "off") || !memcmp(argv[argPos+1], "disable", 7) || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "false") || argv[argPos+1][0] == 'n')
+            if (ARG_IS("off") || ARG_PREFIX("disable") || ARG_IS("0") || ARG_IS("false") || ARG_PREFIX("n"))
                 config.pxAlignOriginX = false, config.pxAlignOriginY = false;
-            else if (!strcmp(argv[argPos+1], "on") || !memcmp(argv[argPos+1], "enable", 6) || !strcmp(argv[argPos+1], "1") || !strcmp(argv[argPos+1], "true") || !strcmp(argv[argPos+1], "hv") || argv[argPos+1][0] == 'y')
+            else if (ARG_IS("on") || ARG_PREFIX("enable") || ARG_IS("1") || ARG_IS("true") || ARG_IS("hv") || ARG_PREFIX("y"))
                 config.pxAlignOriginX = true, config.pxAlignOriginY = true;
-            else if (argv[argPos+1][0] == 'h')
+            else if (ARG_PREFIX("h"))
                 config.pxAlignOriginX = true, config.pxAlignOriginY = false;
-            else if (argv[argPos+1][0] == 'v' || !strcmp(argv[argPos+1], "baseline") || !strcmp(argv[argPos+1], "default"))
+            else if (ARG_PREFIX("v") || ARG_IS("baseline") || ARG_IS("default"))
                 config.pxAlignOriginX = false, config.pxAlignOriginY = true;
             else
                 ABORT("Unknown -pxalign setting. Use one of: off, on, horizontal, vertical.");
-            argPos += 2;
+            ++argPos;
             continue;
         }
         ARG_CASE("-angle", 1) {
             double at;
-            if (!parseAngle(at, argv[argPos+1]))
+            if (!parseAngle(at, argv[argPos++]))
                 ABORT("Invalid angle threshold. Use -angle <min angle> with a positive real number less than PI or a value in degrees followed by 'd' below 180d.");
             config.angleThreshold = at;
-            argPos += 2;
             continue;
         }
         ARG_CASE("-uniformgrid", 0) {
             packingStyle = PackingStyle::GRID;
-            ++argPos;
             continue;
         }
         ARG_CASE("-uniformcols", 1) {
             packingStyle = PackingStyle::GRID;
             unsigned c;
-            if (!(parseUnsigned(c, argv[argPos+1]) && c))
+            if (!(parseUnsigned(c, argv[argPos++]) && c))
                 ABORT("Invalid number of grid columns. Use -uniformcols <N> with a positive integer.");
             config.grid.cols = c;
-            argPos += 2;
             continue;
         }
         ARG_CASE("-uniformcell", 2) {
             packingStyle = PackingStyle::GRID;
             unsigned w, h;
-            if (!(parseUnsigned(w, argv[argPos+1]) && parseUnsigned(h, argv[argPos+2]) && w && h))
+            if (!(parseUnsigned(w, argv[argPos++]) && parseUnsigned(h, argv[argPos++]) && w && h))
                 ABORT("Invalid cell dimensions. Use -uniformcell <width> <height> with two positive integers.");
             fixedCellWidth = w, fixedCellHeight = h;
-            argPos += 3;
             continue;
         }
         ARG_CASE("-uniformcellconstraint", 1) {
             packingStyle = PackingStyle::GRID;
-            if (!strcmp(argv[argPos+1], "none") || !strcmp(argv[argPos+1], "rect"))
+            if (ARG_IS("none") || ARG_IS("rect"))
                 cellSizeConstraint = DimensionsConstraint::NONE;
-            else if (!strcmp(argv[argPos+1], "pots"))
+            else if (ARG_IS("pots"))
                 cellSizeConstraint = DimensionsConstraint::POWER_OF_TWO_SQUARE;
-            else if (!strcmp(argv[argPos+1], "potr"))
+            else if (ARG_IS("potr"))
                 cellSizeConstraint = DimensionsConstraint::POWER_OF_TWO_RECTANGLE;
-            else if (!strcmp(argv[argPos+1], "square"))
+            else if (ARG_IS("square"))
                 cellSizeConstraint = DimensionsConstraint::SQUARE;
-            else if (!strcmp(argv[argPos+1], "square2"))
+            else if (ARG_IS("square2"))
                 cellSizeConstraint = DimensionsConstraint::EVEN_SQUARE;
-            else if (!strcmp(argv[argPos+1], "square4"))
+            else if (ARG_IS("square4"))
                 cellSizeConstraint = DimensionsConstraint::MULTIPLE_OF_FOUR_SQUARE;
             else
                 ABORT("Unknown dimensions constaint. Use -uniformcellconstraint with one of: none, pots, potr, square, square2, or square4.");
-            argPos += 2;
+            ++argPos;
             continue;
         }
         ARG_CASE("-uniformorigin", 1) {
             packingStyle = PackingStyle::GRID;
-            if (!strcmp(argv[argPos+1], "off") || !memcmp(argv[argPos+1], "disable", 7) || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "false") || argv[argPos+1][0] == 'n')
+            if (ARG_IS("off") || ARG_PREFIX("disable") || ARG_IS("0") || ARG_IS("false") || ARG_PREFIX("n"))
                 config.grid.fixedOriginX = false, config.grid.fixedOriginY = false;
-            else if (!strcmp(argv[argPos+1], "on") || !memcmp(argv[argPos+1], "enable", 6) || !strcmp(argv[argPos+1], "1") || !strcmp(argv[argPos+1], "true") || !strcmp(argv[argPos+1], "hv") || argv[argPos+1][0] == 'y')
+            else if (ARG_IS("on") || ARG_PREFIX("enable") || ARG_IS("1") || ARG_IS("true") || ARG_IS("hv") || ARG_PREFIX("y"))
                 config.grid.fixedOriginX = true, config.grid.fixedOriginY = true;
-            else if (argv[argPos+1][0] == 'h')
+            else if (ARG_PREFIX("h"))
                 config.grid.fixedOriginX = true, config.grid.fixedOriginY = false;
-            else if (argv[argPos+1][0] == 'v' || !strcmp(argv[argPos+1], "baseline") || !strcmp(argv[argPos+1], "default"))
+            else if (ARG_PREFIX("v") || ARG_IS("baseline") || ARG_IS("default"))
                 config.grid.fixedOriginX = false, config.grid.fixedOriginY = true;
             else
                 ABORT("Unknown -uniformorigin setting. Use one of: off, on, horizontal, vertical.");
-            argPos += 2;
+            ++argPos;
             continue;
         }
         ARG_CASE("-errorcorrection", 1) {
             msdfgen::ErrorCorrectionConfig &ec = config.generatorAttributes.config.errorCorrection;
-            if (!memcmp(argv[argPos+1], "disable", 7) || !strcmp(argv[argPos+1], "0") || !strcmp(argv[argPos+1], "none")) {
+            if (ARG_PREFIX("disable") || ARG_IS("0") || ARG_IS("none")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::DISABLED;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
-            } else if (!strcmp(argv[argPos+1], "default") || !strcmp(argv[argPos+1], "auto") || !strcmp(argv[argPos+1], "auto-mixed") || !strcmp(argv[argPos+1], "mixed")) {
+            } else if (ARG_IS("default") || ARG_IS("auto") || ARG_IS("auto-mixed") || ARG_IS("mixed")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::CHECK_DISTANCE_AT_EDGE;
-            } else if (!strcmp(argv[argPos+1], "auto-fast") || !strcmp(argv[argPos+1], "fast")) {
+            } else if (ARG_IS("auto-fast") || ARG_IS("fast")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
-            } else if (!strcmp(argv[argPos+1], "auto-full") || !strcmp(argv[argPos+1], "full")) {
+            } else if (ARG_IS("auto-full") || ARG_IS("full")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
-            } else if (!strcmp(argv[argPos+1], "distance") || !strcmp(argv[argPos+1], "distance-fast") || !strcmp(argv[argPos+1], "indiscriminate") || !strcmp(argv[argPos+1], "indiscriminate-fast")) {
+            } else if (ARG_IS("distance") || ARG_IS("distance-fast") || ARG_IS("indiscriminate") || ARG_IS("indiscriminate-fast")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::INDISCRIMINATE;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
-            } else if (!strcmp(argv[argPos+1], "distance-full") || !strcmp(argv[argPos+1], "indiscriminate-full")) {
+            } else if (ARG_IS("distance-full") || ARG_IS("indiscriminate-full")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::INDISCRIMINATE;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
-            } else if (!strcmp(argv[argPos+1], "edge-fast")) {
+            } else if (ARG_IS("edge-fast")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_ONLY;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::DO_NOT_CHECK_DISTANCE;
-            } else if (!strcmp(argv[argPos+1], "edge") || !strcmp(argv[argPos+1], "edge-full")) {
+            } else if (ARG_IS("edge") || ARG_IS("edge-full")) {
                 ec.mode = msdfgen::ErrorCorrectionConfig::EDGE_ONLY;
                 ec.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
-            } else if (!strcmp(argv[argPos+1], "help")) {
+            } else if (ARG_IS("help")) {
                 puts(errorCorrectionHelpText);
                 return 0;
             } else
                 ABORT("Unknown error correction mode. Use -errorcorrection help for more information.");
+            ++argPos;
             explicitErrorCorrectionMode = true;
-            argPos += 2;
             continue;
         }
         ARG_CASE("-errordeviationratio", 1) {
             double edr;
-            if (!(parseDouble(edr, argv[argPos+1]) && edr > 0))
+            if (!(parseDouble(edr, argv[argPos++]) && edr > 0))
                 ABORT("Invalid error deviation ratio. Use -errordeviationratio <ratio> with a positive real number.");
             config.generatorAttributes.config.errorCorrection.minDeviationRatio = edr;
-            argPos += 2;
             continue;
         }
         ARG_CASE("-errorimproveratio", 1) {
             double eir;
-            if (!(parseDouble(eir, argv[argPos+1]) && eir > 0))
+            if (!(parseDouble(eir, argv[argPos++]) && eir > 0))
                 ABORT("Invalid error improvement ratio. Use -errorimproveratio <ratio> with a positive real number.");
             config.generatorAttributes.config.errorCorrection.minImproveRatio = eir;
-            argPos += 2;
             continue;
         }
-        ARG_CASE("-coloringstrategy", 1) {
-            if (!strcmp(argv[argPos+1], "simple")) config.edgeColoring = msdfgen::edgeColoringSimple, config.expensiveColoring = false;
-            else if (!strcmp(argv[argPos+1], "inktrap")) config.edgeColoring = msdfgen::edgeColoringInkTrap, config.expensiveColoring = false;
-            else if (!strcmp(argv[argPos+1], "distance")) config.edgeColoring = msdfgen::edgeColoringByDistance, config.expensiveColoring = true;
+        ARG_CASE("-coloringstrategy" ARG_CASE_OR "-edgecoloring", 1) {
+            if (ARG_IS("simple"))
+                config.edgeColoring = &msdfgen::edgeColoringSimple, config.expensiveColoring = false;
+            else if (ARG_IS("inktrap"))
+                config.edgeColoring = &msdfgen::edgeColoringInkTrap, config.expensiveColoring = false;
+            else if (ARG_IS("distance"))
+                config.edgeColoring = &msdfgen::edgeColoringByDistance, config.expensiveColoring = true;
             else
                 fputs("Unknown coloring strategy specified.\n", stderr);
-            argPos += 2;
+            ++argPos;
             continue;
         }
         ARG_CASE("-miterlimit", 1) {
             double m;
-            if (!(parseDouble(m, argv[++argPos]) && m >= 0))
+            if (!(parseDouble(m, argv[argPos++]) && m >= 0))
                 ABORT("Invalid miter limit argument. Use -miterlimit <limit> with a positive real number.");
             config.miterLimit = m;
-            ++argPos;
             continue;
         }
         ARG_CASE("-nokerning", 0) {
             config.kerning = false;
-            ++argPos;
             continue;
         }
         ARG_CASE("-kerning", 0) {
             config.kerning = true;
-            ++argPos;
             continue;
         }
         ARG_CASE("-nopreprocess", 0) {
             config.preprocessGeometry = false;
-            ++argPos;
             continue;
         }
         ARG_CASE("-preprocess", 0) {
             config.preprocessGeometry = true;
-            ++argPos;
             continue;
         }
         ARG_CASE("-nooverlap", 0) {
             config.generatorAttributes.config.overlapSupport = false;
-            ++argPos;
             continue;
         }
         ARG_CASE("-overlap", 0) {
             config.generatorAttributes.config.overlapSupport = true;
-            ++argPos;
             continue;
         }
         ARG_CASE("-noscanline", 0) {
             config.generatorAttributes.scanlinePass = false;
-            ++argPos;
             continue;
         }
         ARG_CASE("-scanline", 0) {
             config.generatorAttributes.scanlinePass = true;
-            ++argPos;
             continue;
         }
         ARG_CASE("-seed", 1) {
-            if (!parseUnsignedLL(config.coloringSeed, argv[argPos+1]))
+            if (!parseUnsignedLL(config.coloringSeed, argv[argPos++]))
                 ABORT("Invalid seed. Use -seed <N> with N being a non-negative integer.");
-            argPos += 2;
             continue;
         }
         ARG_CASE("-threads", 1) {
             unsigned tc;
-            if (!parseUnsigned(tc, argv[argPos+1]) || (int) tc < 0)
+            if (!(parseUnsigned(tc, argv[argPos++]) && (int) tc >= 0))
                 ABORT("Invalid thread count. Use -threads <N> with N being a non-negative integer.");
             config.threadCount = (int) tc;
-            argPos += 2;
             continue;
         }
         ARG_CASE("-version", 0) {
@@ -793,9 +763,8 @@ int main(int argc, const char *const *argv) {
             puts(helpText);
             return 0;
         }
-        fprintf(stderr, "Unknown setting or insufficient parameters: %s\n", argv[argPos]);
+        fprintf(stderr, "Unknown setting or insufficient parameters: %s\n", argv[argPos++]);
         suggestHelp = true;
-        ++argPos;
     }
     if (suggestHelp)
         fputs("Use -help for more information.\n", stderr);
