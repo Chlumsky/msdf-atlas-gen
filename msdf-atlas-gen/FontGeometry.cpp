@@ -1,6 +1,8 @@
 
 #include "FontGeometry.h"
 
+#define DEFAULT_FONT_UNITS_PER_EM 2048.0
+
 namespace msdf_atlas {
 
 FontGeometry::GlyphRange::GlyphRange() : glyphs(), rangeStart(), rangeEnd() { }
@@ -82,10 +84,10 @@ int FontGeometry::loadCharset(msdfgen::FontHandle *font, double fontScale, const
 }
 
 bool FontGeometry::loadMetrics(msdfgen::FontHandle *font, double fontScale) {
-    if (!msdfgen::getFontMetrics(metrics, font))
+    if (!msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_NONE))
         return false;
     if (metrics.emSize <= 0)
-        metrics.emSize = MSDF_ATLAS_DEFAULT_EM_SIZE;
+        metrics.emSize = DEFAULT_FONT_UNITS_PER_EM;
     geometryScale = fontScale/metrics.emSize;
     metrics.emSize *= geometryScale;
     metrics.ascenderY *= geometryScale;
@@ -123,7 +125,7 @@ int FontGeometry::loadKerning(msdfgen::FontHandle *font) {
     for (size_t i = rangeStart; i < rangeEnd; ++i)
         for (size_t j = rangeStart; j < rangeEnd; ++j) {
             double advance;
-            if (msdfgen::getKerning(advance, font, (*glyphs)[i].getGlyphIndex(), (*glyphs)[j].getGlyphIndex()) && advance) {
+            if (msdfgen::getKerning(advance, font, (*glyphs)[i].getGlyphIndex(), (*glyphs)[j].getGlyphIndex(), msdfgen::FONT_SCALING_NONE) && advance) {
                 kerning[std::make_pair<int, int>((*glyphs)[i].getIndex(), (*glyphs)[j].getIndex())] = geometryScale*advance;
                 ++loaded;
             }

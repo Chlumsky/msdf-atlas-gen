@@ -9,7 +9,7 @@ namespace msdf_atlas {
 GlyphGeometry::GlyphGeometry() : index(), codepoint(), geometryScale(), bounds(), advance(), box() { }
 
 bool GlyphGeometry::load(msdfgen::FontHandle *font, double geometryScale, msdfgen::GlyphIndex index, bool preprocessGeometry) {
-    if (font && msdfgen::loadGlyph(shape, font, index, &advance) && shape.validate()) {
+    if (font && msdfgen::loadGlyph(shape, font, index, msdfgen::FONT_SCALING_NONE, &advance) && shape.validate()) {
         this->index = index.getIndex();
         this->geometryScale = geometryScale;
         codepoint = 0;

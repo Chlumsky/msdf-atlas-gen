@@ -11,8 +11,6 @@
 #include "GlyphGeometry.h"
 #include "Charset.h"
 
-#define MSDF_ATLAS_DEFAULT_EM_SIZE 32.0
-
 namespace msdf_atlas {
 
 /// Represents the geometry of all glyphs of a given font or font variant

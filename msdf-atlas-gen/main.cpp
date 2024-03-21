@@ -20,6 +20,7 @@
 
 using namespace msdf_atlas;
 
+#define DEFAULT_SIZE 32.0
 #define DEFAULT_ANGLE_THRESHOLD 3.0
 #define DEFAULT_MITER_LIMIT 1.0
 #define DEFAULT_PIXEL_RANGE 2.0
@@ -837,7 +838,7 @@ int main(int argc, const char *const *argv) {
         minEmSize = config.emSize;
     if (!(fixedWidth > 0 && fixedHeight > 0) && !(fixedCellWidth > 0 && fixedCellHeight > 0) && !(minEmSize > 0)) {
         fputs("Neither atlas size nor glyph size selected, using default...\n", stderr);
-        minEmSize = MSDF_ATLAS_DEFAULT_EM_SIZE;
+        minEmSize = DEFAULT_SIZE;
     }
     if (config.imageType == ImageType::HARD_MASK || config.imageType == ImageType::SOFT_MASK) {
         rangeMode = RANGE_PIXEL;
