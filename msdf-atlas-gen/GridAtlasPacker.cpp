@@ -102,8 +102,6 @@ GridAtlasPacker::GridAtlasPacker() :
     pxRange(0),
     miterLimit(0),
     pxAlignOriginX(false), pxAlignOriginY(false),
-    innerUnitPadding(), outerUnitPadding(),
-    innerPxPadding(), outerPxPadding(),
     scaleMaximizationTolerance(.001),
     alignedColumnsBias(.125),
     cutoff(false)
@@ -136,8 +134,7 @@ msdfgen::Shape::Bounds GridAtlasPacker::getMaxBounds(double &maxWidth, double &m
     if (maxBounds.l >= maxBounds.r || maxBounds.b >= maxBounds.t)
         maxBounds = msdfgen::Shape::Bounds();
     Padding fullPadding = scale*(innerUnitPadding+outerUnitPadding)+innerPxPadding+outerPxPadding;
-    maxBounds.l -= fullPadding.l, maxBounds.b -= fullPadding.b;
-    maxBounds.r += fullPadding.r, maxBounds.t += fullPadding.t;
+    pad(maxBounds, fullPadding);
     maxWidth += fullPadding.l+fullPadding.r;
     maxHeight += fullPadding.b+fullPadding.t;
     // If origin is pixel-aligned but not fixed, one pixel has to be added to max dimensions to allow for aligning the origin by shifting by < 1 pixel
@@ -326,8 +323,7 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
             Padding pxPadding = innerPxPadding+outerPxPadding;
             maxBounds = getMaxBounds(maxWidth, maxHeight, glyphs, count, 1, -unitRange.lower);
             // Undo pxPadding added by getMaxBounds before pixel scale is known
-            maxBounds.l += pxPadding.l, maxBounds.b += pxPadding.b;
-            maxBounds.r -= pxPadding.r, maxBounds.t -= pxPadding.t;
+            pad(maxBounds, -pxPadding);
             maxWidth -= pxPadding.l+pxPadding.r;
             maxHeight -= pxPadding.b+pxPadding.t;
             int hSlack = 0, vSlack = 0;
@@ -419,8 +415,7 @@ int GridAtlasPacker::pack(GlyphGeometry *glyphs, int count) {
             maxBounds.r *= scale, maxBounds.t *= scale;
             maxWidth *= scale, maxHeight *= scale;
             // Redo addition of pxPadding once scale is known
-            maxBounds.l -= pxPadding.l, maxBounds.b -= pxPadding.b;
-            maxBounds.r += pxPadding.r, maxBounds.t += pxPadding.t;
+            pad(maxBounds, pxPadding);
             maxWidth += pxPadding.l+pxPadding.r;
             maxHeight += pxPadding.b+pxPadding.t;
 
@@ -602,42 +597,20 @@ void GridAtlasPacker::setOriginPixelAlignment(bool alignX, bool alignY) {
     pxAlignOriginX = alignX, pxAlignOriginY = alignY;
 }
 
-static Padding makeUniformPadding(double width) {
-    Padding p;
-    p.l = width, p.b = width, p.r = width, p.t = width;
-    return p;
-}
-
 void GridAtlasPacker::setInnerUnitPadding(const Padding &padding) {
     innerUnitPadding = padding;
-}
-
-void GridAtlasPacker::setInnerUnitPadding(double uniformPadding) {
-    innerUnitPadding = makeUniformPadding(uniformPadding);
 }
 
 void GridAtlasPacker::setOuterUnitPadding(const Padding &padding) {
     outerUnitPadding = padding;
 }
 
-void GridAtlasPacker::setOuterUnitPadding(double uniformPadding) {
-    outerUnitPadding = makeUniformPadding(uniformPadding);
-}
-
 void GridAtlasPacker::setInnerPixelPadding(const Padding &padding) {
     innerPxPadding = padding;
 }
 
-void GridAtlasPacker::setInnerPixelPadding(double uniformPadding) {
-    innerPxPadding = makeUniformPadding(uniformPadding);
-}
-
 void GridAtlasPacker::setOuterPixelPadding(const Padding &padding) {
     outerPxPadding = padding;
-}
-
-void GridAtlasPacker::setOuterPixelPadding(double uniformPadding) {
-    outerPxPadding = makeUniformPadding(uniformPadding);
 }
 
 void GridAtlasPacker::getDimensions(int &width, int &height) const {

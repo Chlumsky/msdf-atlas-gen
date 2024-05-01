@@ -5,11 +5,10 @@
 #include <msdfgen-ext.h>
 #include "types.h"
 #include "Rectangle.h"
+#include "Padding.h"
 #include "GlyphBox.h"
 
 namespace msdf_atlas {
-
-typedef msdfgen::Shape::Bounds Padding;
 
 /// Represents the shape geometry of a single glyph as well as its configuration
 class GlyphGeometry {
@@ -98,8 +97,5 @@ private:
 };
 
 msdfgen::Range operator+(msdfgen::Range a, msdfgen::Range b);
-
-Padding operator+(const Padding &a, const Padding &b);
-Padding operator*(double a, const Padding &b);
 
 }

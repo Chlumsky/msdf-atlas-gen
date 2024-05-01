@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "Padding.h"
 #include "GlyphGeometry.h"
 
 namespace msdf_atlas {
@@ -50,16 +51,12 @@ public:
     void setOriginPixelAlignment(bool alignX, bool alignY);
     /// Sets the unit component of width of additional padding that is part of each glyph quad
     void setInnerUnitPadding(const Padding &padding);
-    void setInnerUnitPadding(double uniformPadding);
     /// Sets the unit component of width of additional padding around each glyph quad
     void setOuterUnitPadding(const Padding &padding);
-    void setOuterUnitPadding(double uniformPadding);
     /// Sets the pixel component of width of additional padding that is part of each glyph quad
     void setInnerPixelPadding(const Padding &padding);
-    void setInnerPixelPadding(double uniformPadding);
     /// Sets the pixel component of width of additional padding around each glyph quad
     void setOuterPixelPadding(const Padding &padding);
-    void setOuterPixelPadding(double uniformPadding);
 
     /// Outputs the atlas's final dimensions
     void getDimensions(int &width, int &height) const;

@@ -253,12 +253,6 @@ static bool strStartsWith(const char *str, const char *prefix) {
     return true;
 }
 
-static Padding makeUniformPadding(double width) {
-    Padding p;
-    p.l = width, p.b = width, p.r = width, p.t = width;
-    return p;
-}
-
 #ifndef MSDFGEN_DISABLE_VARIABLE_FONTS
 static msdfgen::FontHandle *loadVarFont(msdfgen::FreetypeHandle *library, const char *filename) {
     std::string buffer;
@@ -399,8 +393,8 @@ int main(int argc, const char *const *argv) {
     double minEmSize = 0;
     Units rangeUnits = Units::PIXELS;
     msdfgen::Range rangeValue = 0;
-    Padding innerPadding = { };
-    Padding outerPadding = { };
+    Padding innerPadding;
+    Padding outerPadding;
     Units innerPaddingUnits = Units::EMS;
     Units outerPaddingUnits = Units::EMS;
     PackingStyle packingStyle = PackingStyle::TIGHT;
@@ -656,7 +650,7 @@ int main(int argc, const char *const *argv) {
             if (!parseDouble(p, argv[argPos++]))
                 ABORT("Invalid padding argument. Use -empadding <padding> with a real number.");
             innerPaddingUnits = Units::EMS;
-            innerPadding = makeUniformPadding(p);
+            innerPadding = Padding(p);
             continue;
         }
         ARG_CASE("-pxpadding", 1) {
@@ -664,7 +658,7 @@ int main(int argc, const char *const *argv) {
             if (!parseDouble(p, argv[argPos++]))
                 ABORT("Invalid padding argument. Use -pxpadding <padding> with a real number.");
             innerPaddingUnits = Units::PIXELS;
-            innerPadding = makeUniformPadding(p);
+            innerPadding = Padding(p);
             continue;
         }
         ARG_CASE("-outerempadding", 1) {
@@ -672,7 +666,7 @@ int main(int argc, const char *const *argv) {
             if (!parseDouble(p, argv[argPos++]))
                 ABORT("Invalid padding argument. Use -outerempadding <padding> with a real number.");
             outerPaddingUnits = Units::EMS;
-            outerPadding = makeUniformPadding(p);
+            outerPadding = Padding(p);
             continue;
         }
         ARG_CASE("-outerpxpadding", 1) {
@@ -680,7 +674,7 @@ int main(int argc, const char *const *argv) {
             if (!parseDouble(p, argv[argPos++]))
                 ABORT("Invalid padding argument. Use -outerpxpadding <padding> with a real number.");
             outerPaddingUnits = Units::PIXELS;
-            outerPadding = makeUniformPadding(p);
+            outerPadding = Padding(p);
             continue;
         }
         ARG_CASE("-aempadding", 4) {
@@ -1171,8 +1165,8 @@ int main(int argc, const char *const *argv) {
                 pxRange = rangeValue;
                 break;
         }
-        Padding innerEmPadding = { }, outerEmPadding = { };
-        Padding innerPxPadding = { }, outerPxPadding = { };
+        Padding innerEmPadding, outerEmPadding;
+        Padding innerPxPadding, outerPxPadding;
         switch (innerPaddingUnits) {
             case Units::EMS:
                 innerEmPadding = innerPadding;

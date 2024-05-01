@@ -54,7 +54,7 @@ void GlyphGeometry::edgeColoring(void (*fn)(msdfgen::Shape &, double, unsigned l
 void GlyphGeometry::wrapBox(const GlyphAttributes &glyphAttributes) {
     double scale = glyphAttributes.scale*geometryScale;
     msdfgen::Range range = glyphAttributes.range/geometryScale;
-    Padding fullPadding = 1/geometryScale*(glyphAttributes.innerPadding+glyphAttributes.outerPadding);
+    Padding fullPadding = (glyphAttributes.innerPadding+glyphAttributes.outerPadding)/geometryScale;
     box.range = range;
     box.scale = scale;
     if (bounds.l < bounds.r && bounds.b < bounds.t) {
@@ -115,7 +115,7 @@ void GlyphGeometry::wrapBox(double scale, double range, double miterLimit, bool 
 void GlyphGeometry::frameBox(const GlyphAttributes &glyphAttributes, int width, int height, const double *fixedX, const double *fixedY) {
     double scale = glyphAttributes.scale*geometryScale;
     msdfgen::Range range = glyphAttributes.range/geometryScale;
-    Padding fullPadding = 1/geometryScale*(glyphAttributes.innerPadding+glyphAttributes.outerPadding);
+    Padding fullPadding = (glyphAttributes.innerPadding+glyphAttributes.outerPadding)/geometryScale;
     box.range = range;
     box.scale = scale;
     box.rect.w = width;
@@ -286,24 +286,6 @@ GlyphGeometry::operator GlyphBox() const {
 
 msdfgen::Range operator+(msdfgen::Range a, msdfgen::Range b) {
     return msdfgen::Range(a.lower+b.lower, a.upper+b.upper);
-}
-
-Padding operator+(const Padding &a, const Padding &b) {
-    Padding result;
-    result.l = a.l+b.l;
-    result.b = a.b+b.b;
-    result.r = a.r+b.r;
-    result.t = a.t+b.t;
-    return result;
-}
-
-Padding operator*(double a, const Padding &b) {
-    Padding result;
-    result.l = a*b.l;
-    result.b = a*b.b;
-    result.r = a*b.r;
-    result.t = a*b.t;
-    return result;
 }
 
 }
