@@ -69,8 +69,10 @@ bool exportArteryFont(const FontGeometry *fonts, int fontCount, const msdfgen::B
         fontVariant.codepointType = convertCodepointType(identifierType);
         fontVariant.imageType = convertImageType(properties.imageType);
         fontVariant.metrics.fontSize = REAL(properties.fontSize*fontMetrics.emSize);
-        if (properties.imageType != ImageType::HARD_MASK)
-            fontVariant.metrics.distanceRange = REAL(properties.pxRange);
+        if (properties.imageType != ImageType::HARD_MASK) {
+            fontVariant.metrics.distanceRange = REAL(properties.pxRange.upper-properties.pxRange.lower);
+            fontVariant.metrics.distanceRangeMiddle = REAL(.5*(properties.pxRange.lower+properties.pxRange.upper));
+        }
         fontVariant.metrics.emSize = REAL(fontMetrics.emSize);
         fontVariant.metrics.ascender = REAL(fontMetrics.ascenderY);
         fontVariant.metrics.descender = REAL(fontMetrics.descenderY);

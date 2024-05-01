@@ -128,14 +128,28 @@ GLYPH CONFIGURATION
       Specifies the size of the glyphs in the atlas bitmap in pixels per em.
   -minsize <em size>
       Specifies the minimum size. The largest possible size that fits the same atlas dimensions will be used.
-  -emrange <em range>
-      Specifies the SDF distance range in em's.
-  -pxrange <pixel range>
-      Specifies the SDF distance range in output pixels. The default value is 2.
+  -emrange <em range width>
+      Specifies the width of the representable SDF distance range in ems.
+  -pxrange <pixel range width>
+      Specifies the width of the SDF distance range in output pixels. The default value is 2.
+  -aemrange <outermost distance> <innermost distance>
+      Specifies the outermost (negative) and innermost representable distance in ems.
+  -apxrange <outermost distance> <innermost distance>
+      Specifies the outermost (negative) and innermost representable distance in pixels.
   -pxalign <off / on / horizontal / vertical>
       Specifies whether each glyph's origin point should be aligned with the pixel grid.
   -nokerning
       Disables inclusion of kerning pair table in output files.
+To specify additional inner / outer padding for each glyph in ems / pixels:
+  -empadding <width>
+  -pxpadding <width>
+  -outerempadding <width>
+  -outerpxpadding <width>
+Or asymmetrical padding with a separate value for each side:
+  -aempadding <left> <bottom> <right> <top>
+  -apxpadding <left> <bottom> <right> <top>
+  -aouterempadding <left> <bottom> <right> <top>
+  -aouterpxpadding <left> <bottom> <right> <top>
 
 DISTANCE FIELD GENERATOR SETTINGS
   -angle <angle>
@@ -264,6 +278,13 @@ static msdfgen::FontHandle *loadVarFont(msdfgen::FreetypeHandle *library, const 
 }
 #endif
 
+enum class Units {
+    /// Value is specified in ems
+    EMS,
+    /// Value is specified in pixels
+    PIXELS
+};
+
 struct FontInput {
     const char *fontFilename;
     bool variableFont;
@@ -279,7 +300,7 @@ struct Configuration {
     YDirection yDirection;
     int width, height;
     double emSize;
-    double pxRange;
+    msdfgen::Range pxRange;
     double angleThreshold;
     double miterLimit;
     bool pxAlignOriginX, pxAlignOriginY;
@@ -370,13 +391,12 @@ int main(int argc, const char *const *argv) {
     config.generatorAttributes.config.overlapSupport = !config.preprocessGeometry;
     config.generatorAttributes.scanlinePass = !config.preprocessGeometry;
     double minEmSize = 0;
-    enum {
-        /// Range specified in ems
-        RANGE_EM,
-        /// Range specified in output pixels
-        RANGE_PIXEL,
-    } rangeMode = RANGE_PIXEL;
-    double rangeValue = 0;
+    Units rangeUnits = Units::PIXELS;
+    msdfgen::Range rangeValue = 0;
+    Padding innerPadding;
+    Padding outerPadding;
+    Units innerPaddingUnits = Units::EMS;
+    Units outerPaddingUnits = Units::EMS;
     PackingStyle packingStyle = PackingStyle::TIGHT;
     DimensionsConstraint atlasSizeConstraint = DimensionsConstraint::NONE;
     DimensionsConstraint cellSizeConstraint = DimensionsConstraint::NONE;
@@ -577,18 +597,38 @@ int main(int argc, const char *const *argv) {
         }
         ARG_CASE("-emrange", 1) {
             double r;
-            if (!(parseDouble(r, argv[argPos++]) && r >= 0))
-                ABORT("Invalid range argument. Use -emrange <em range> with a positive real number.");
-            rangeMode = RANGE_EM;
+            if (!(parseDouble(r, argv[argPos++]) && r != 0))
+                ABORT("Invalid range argument. Use -emrange <em range> with a non-zero real number.");
+            rangeUnits = Units::EMS;
             rangeValue = r;
             continue;
         }
         ARG_CASE("-pxrange", 1) {
             double r;
-            if (!(parseDouble(r, argv[argPos++]) && r >= 0))
-                ABORT("Invalid range argument. Use -pxrange <pixel range> with a positive real number.");
-            rangeMode = RANGE_PIXEL;
+            if (!(parseDouble(r, argv[argPos++]) && r != 0))
+                ABORT("Invalid range argument. Use -pxrange <pixel range> with a non-zero real number.");
+            rangeUnits = Units::PIXELS;
             rangeValue = r;
+            continue;
+        }
+        ARG_CASE("-aemrange", 2) {
+            double r0, r1;
+            if (!(parseDouble(r0, argv[argPos++]) && parseDouble(r1, argv[argPos++])))
+                ABORT("Invalid range arguments. Use -aemrange <minimum> <maximum> with two real numbers.");
+            if (r0 == r1)
+                ABORT("Range must be non-empty.");
+            rangeUnits = Units::EMS;
+            rangeValue = msdfgen::Range(r0, r1);
+            continue;
+        }
+        ARG_CASE("-apxrange", 2) {
+            double r0, r1;
+            if (!(parseDouble(r0, argv[argPos++]) && parseDouble(r1, argv[argPos++])))
+                ABORT("Invalid range arguments. Use -apxrange <minimum> <maximum> with two real numbers.");
+            if (r0 == r1)
+                ABORT("Range must be non-empty.");
+            rangeUnits = Units::PIXELS;
+            rangeValue = msdfgen::Range(r0, r1);
             continue;
         }
         ARG_CASE("-pxalign", 1) {
@@ -603,6 +643,70 @@ int main(int argc, const char *const *argv) {
             else
                 ABORT("Unknown -pxalign setting. Use one of: off, on, horizontal, vertical.");
             ++argPos;
+            continue;
+        }
+        ARG_CASE("-empadding", 1) {
+            double p;
+            if (!parseDouble(p, argv[argPos++]))
+                ABORT("Invalid padding argument. Use -empadding <padding> with a real number.");
+            innerPaddingUnits = Units::EMS;
+            innerPadding = Padding(p);
+            continue;
+        }
+        ARG_CASE("-pxpadding", 1) {
+            double p;
+            if (!parseDouble(p, argv[argPos++]))
+                ABORT("Invalid padding argument. Use -pxpadding <padding> with a real number.");
+            innerPaddingUnits = Units::PIXELS;
+            innerPadding = Padding(p);
+            continue;
+        }
+        ARG_CASE("-outerempadding", 1) {
+            double p;
+            if (!parseDouble(p, argv[argPos++]))
+                ABORT("Invalid padding argument. Use -outerempadding <padding> with a real number.");
+            outerPaddingUnits = Units::EMS;
+            outerPadding = Padding(p);
+            continue;
+        }
+        ARG_CASE("-outerpxpadding", 1) {
+            double p;
+            if (!parseDouble(p, argv[argPos++]))
+                ABORT("Invalid padding argument. Use -outerpxpadding <padding> with a real number.");
+            outerPaddingUnits = Units::PIXELS;
+            outerPadding = Padding(p);
+            continue;
+        }
+        ARG_CASE("-aempadding", 4) {
+            double l, b, r, t;
+            if (!(parseDouble(l, argv[argPos++]) && parseDouble(b, argv[argPos++]) && parseDouble(r, argv[argPos++]) && parseDouble(t, argv[argPos++])))
+                ABORT("Invalid padding arguments. Use -aempadding <left> <bottom> <right> <top> with 4 real numbers.");
+            innerPaddingUnits = Units::EMS;
+            innerPadding.l = l, innerPadding.b = b, innerPadding.r = r, innerPadding.t = t;
+            continue;
+        }
+        ARG_CASE("-apxpadding", 4) {
+            double l, b, r, t;
+            if (!(parseDouble(l, argv[argPos++]) && parseDouble(b, argv[argPos++]) && parseDouble(r, argv[argPos++]) && parseDouble(t, argv[argPos++])))
+                ABORT("Invalid padding arguments. Use -apxpadding <left> <bottom> <right> <top> with 4 real numbers.");
+            innerPaddingUnits = Units::PIXELS;
+            innerPadding.l = l, innerPadding.b = b, innerPadding.r = r, innerPadding.t = t;
+            continue;
+        }
+        ARG_CASE("-aouterempadding", 4) {
+            double l, b, r, t;
+            if (!(parseDouble(l, argv[argPos++]) && parseDouble(b, argv[argPos++]) && parseDouble(r, argv[argPos++]) && parseDouble(t, argv[argPos++])))
+                ABORT("Invalid padding arguments. Use -aouterempadding <left> <bottom> <right> <top> with 4 real numbers.");
+            outerPaddingUnits = Units::EMS;
+            outerPadding.l = l, outerPadding.b = b, outerPadding.r = r, outerPadding.t = t;
+            continue;
+        }
+        ARG_CASE("-aouterpxpadding", 4) {
+            double l, b, r, t;
+            if (!(parseDouble(l, argv[argPos++]) && parseDouble(b, argv[argPos++]) && parseDouble(r, argv[argPos++]) && parseDouble(t, argv[argPos++])))
+                ABORT("Invalid padding arguments. Use -aouterpxpadding <left> <bottom> <right> <top> with 4 real numbers.");
+            outerPaddingUnits = Units::PIXELS;
+            outerPadding.l = l, outerPadding.b = b, outerPadding.r = r, outerPadding.t = t;
             continue;
         }
         ARG_CASE("-angle", 1) {
@@ -841,10 +945,10 @@ int main(int argc, const char *const *argv) {
         minEmSize = DEFAULT_SIZE;
     }
     if (config.imageType == ImageType::HARD_MASK || config.imageType == ImageType::SOFT_MASK) {
-        rangeMode = RANGE_PIXEL;
+        rangeUnits = Units::PIXELS;
         rangeValue = 1;
-    } else if (rangeValue <= 0) {
-        rangeMode = RANGE_PIXEL;
+    } else if (rangeValue.lower == rangeValue.upper) {
+        rangeUnits = Units::PIXELS;
         rangeValue = DEFAULT_PIXEL_RANGE;
     }
     if (config.kerning && !(config.arteryFontFilename || config.jsonFilename || config.shadronPreviewFilename))
@@ -1052,13 +1156,31 @@ int main(int argc, const char *const *argv) {
 
     // Determine final atlas dimensions, scale and range, pack glyphs
     {
-        double unitRange = 0, pxRange = 0;
-        switch (rangeMode) {
-            case RANGE_EM:
-                unitRange = rangeValue;
+        msdfgen::Range emRange = 0, pxRange = 0;
+        switch (rangeUnits) {
+            case Units::EMS:
+                emRange = rangeValue;
                 break;
-            case RANGE_PIXEL:
+            case Units::PIXELS:
                 pxRange = rangeValue;
+                break;
+        }
+        Padding innerEmPadding, outerEmPadding;
+        Padding innerPxPadding, outerPxPadding;
+        switch (innerPaddingUnits) {
+            case Units::EMS:
+                innerEmPadding = innerPadding;
+                break;
+            case Units::PIXELS:
+                innerPxPadding = innerPadding;
+                break;
+        }
+        switch (outerPaddingUnits) {
+            case Units::EMS:
+                outerEmPadding = outerPadding;
+                break;
+            case Units::PIXELS:
+                outerPxPadding = outerPadding;
                 break;
         }
         bool fixedDimensions = fixedWidth >= 0 && fixedHeight >= 0;
@@ -1077,9 +1199,13 @@ int main(int argc, const char *const *argv) {
                 else
                     atlasPacker.setMinimumScale(minEmSize);
                 atlasPacker.setPixelRange(pxRange);
-                atlasPacker.setUnitRange(unitRange);
+                atlasPacker.setUnitRange(emRange);
                 atlasPacker.setMiterLimit(config.miterLimit);
                 atlasPacker.setOriginPixelAlignment(config.pxAlignOriginX, config.pxAlignOriginY);
+                atlasPacker.setInnerUnitPadding(innerEmPadding);
+                atlasPacker.setOuterUnitPadding(outerEmPadding);
+                atlasPacker.setInnerPixelPadding(innerPxPadding);
+                atlasPacker.setOuterPixelPadding(outerPxPadding);
                 if (int remaining = atlasPacker.pack(glyphs.data(), glyphs.size())) {
                     if (remaining < 0) {
                         ABORT("Failed to pack glyphs into atlas.");
@@ -1119,9 +1245,13 @@ int main(int argc, const char *const *argv) {
                 else
                     atlasPacker.setMinimumScale(minEmSize);
                 atlasPacker.setPixelRange(pxRange);
-                atlasPacker.setUnitRange(unitRange);
+                atlasPacker.setUnitRange(emRange);
                 atlasPacker.setMiterLimit(config.miterLimit);
                 atlasPacker.setOriginPixelAlignment(config.pxAlignOriginX, config.pxAlignOriginY);
+                atlasPacker.setInnerUnitPadding(innerEmPadding);
+                atlasPacker.setOuterUnitPadding(outerEmPadding);
+                atlasPacker.setInnerPixelPadding(innerPxPadding);
+                atlasPacker.setOuterPixelPadding(outerPxPadding);
                 if (int remaining = atlasPacker.pack(glyphs.data(), glyphs.size())) {
                     if (remaining < 0) {
                         ABORT("Failed to pack glyphs into atlas.");

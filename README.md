@@ -120,7 +120,11 @@ Any non-empty subset of the following may be specified:
 - `-minsize <em size>` &ndash; sets the minimum size. The largest possible size that fits the same atlas dimensions will be used
 - `-emrange <em range>` &ndash; sets the distance field range in em's
 - `-pxrange <pixel range>` (default = 2) &ndash; sets the distance field range in output pixels
+- `-aemrange` / `-apxrange <outermost distance> <innermost distance>` &ndash; sets the distance field range asymmetrically by specifying the minimum and maximum representable signed distances (outside distances are negative!)
 - `-pxalign <off / on / horizontal / vertical>` (default = vertical) &ndash; enables or disables alignment of glyph's origin point with the pixel grid
+- `-empadding` / `-pxpadding <width>` &ndash; sets additional padding within each glyph's box (in em's / pixels)
+- `-outerempadding` / `-outerpxpadding <width>` &ndash; sets additional padding around each glyph's box
+- `-aempadding` / `-apxpadding` / `-aouterempadding` / `-aouterpxpadding <left> <bottom> <right> <top>` &ndash; sets additional padding (see above) asymmetrically with a separate width value for each side
 
 ### Distance field generator settings
 

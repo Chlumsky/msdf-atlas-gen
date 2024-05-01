@@ -15,7 +15,7 @@ struct JsonAtlasMetrics {
         const double *originX, *originY;
         int spacing;
     };
-    double distanceRange;
+    msdfgen::Range distanceRange;
     double size;
     int width, height;
     YDirection yDirection;

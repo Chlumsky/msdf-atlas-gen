@@ -67,8 +67,10 @@ bool exportJSON(const FontGeometry *fonts, int fontCount, ImageType imageType, c
     // Atlas properties
     fputs("\"atlas\":{", f); {
         fprintf(f, "\"type\":\"%s\",", imageTypeString(imageType));
-        if (imageType == ImageType::SDF || imageType == ImageType::PSDF || imageType == ImageType::MSDF || imageType == ImageType::MTSDF)
-            fprintf(f, "\"distanceRange\":%.17g,", metrics.distanceRange);
+        if (imageType == ImageType::SDF || imageType == ImageType::PSDF || imageType == ImageType::MSDF || imageType == ImageType::MTSDF) {
+            fprintf(f, "\"distanceRange\":%.17g,", metrics.distanceRange.upper-metrics.distanceRange.lower);
+            fprintf(f, "\"distanceRangeMiddle\":%.17g,", .5*(metrics.distanceRange.lower+metrics.distanceRange.upper));
+        }
         fprintf(f, "\"size\":%.17g,", metrics.size);
         fprintf(f, "\"width\":%d,", metrics.width);
         fprintf(f, "\"height\":%d,", metrics.height);

@@ -22,16 +22,23 @@ TightAtlasPacker::TightAtlasPacker() :
 { }
 
 int TightAtlasPacker::tryPack(GlyphGeometry *glyphs, int count, DimensionsConstraint dimensionsConstraint, int &width, int &height, double scale) const {
-    double range = unitRange+pxRange/scale;
     // Wrap glyphs into boxes
     std::vector<Rectangle> rectangles;
     std::vector<GlyphGeometry *> rectangleGlyphs;
     rectangles.reserve(count);
     rectangleGlyphs.reserve(count);
+    GlyphGeometry::GlyphAttributes attribs = { };
+    attribs.scale = scale;
+    attribs.range = unitRange+pxRange/scale;
+    attribs.innerPadding = innerUnitPadding+innerPxPadding/scale;
+    attribs.outerPadding = outerUnitPadding+outerPxPadding/scale;
+    attribs.miterLimit = miterLimit;
+    attribs.pxAlignOriginX = pxAlignOriginX;
+    attribs.pxAlignOriginY = pxAlignOriginY;
     for (GlyphGeometry *glyph = glyphs, *end = glyphs+count; glyph < end; ++glyph) {
         if (!glyph->isWhitespace()) {
             Rectangle rect = { };
-            glyph->wrapBox(scale, range, miterLimit, pxAlignOriginX, pxAlignOriginY);
+            glyph->wrapBox(attribs);
             glyph->getBoxSize(rect.w, rect.h);
             if (rect.w > 0 && rect.h > 0) {
                 rectangles.push_back(rect);
@@ -143,11 +150,11 @@ void TightAtlasPacker::setMinimumScale(double minScale) {
     this->minScale = minScale;
 }
 
-void TightAtlasPacker::setUnitRange(double unitRange) {
+void TightAtlasPacker::setUnitRange(msdfgen::Range unitRange) {
     this->unitRange = unitRange;
 }
 
-void TightAtlasPacker::setPixelRange(double pxRange) {
+void TightAtlasPacker::setPixelRange(msdfgen::Range pxRange) {
     this->pxRange = pxRange;
 }
 
@@ -163,6 +170,22 @@ void TightAtlasPacker::setOriginPixelAlignment(bool alignX, bool alignY) {
     pxAlignOriginX = alignX, pxAlignOriginY = alignY;
 }
 
+void TightAtlasPacker::setInnerUnitPadding(const Padding &padding) {
+    innerUnitPadding = padding;
+}
+
+void TightAtlasPacker::setOuterUnitPadding(const Padding &padding) {
+    outerUnitPadding = padding;
+}
+
+void TightAtlasPacker::setInnerPixelPadding(const Padding &padding) {
+    innerPxPadding = padding;
+}
+
+void TightAtlasPacker::setOuterPixelPadding(const Padding &padding) {
+    outerPxPadding = padding;
+}
+
 void TightAtlasPacker::getDimensions(int &width, int &height) const {
     width = this->width, height = this->height;
 }
@@ -171,7 +194,7 @@ double TightAtlasPacker::getScale() const {
     return scale;
 }
 
-double TightAtlasPacker::getPixelRange() const {
+msdfgen::Range TightAtlasPacker::getPixelRange() const {
     return pxRange+scale*unitRange;
 }
 
