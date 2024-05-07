@@ -15,8 +15,8 @@ bool GlyphGeometry::load(msdfgen::FontHandle *font, double geometryScale, msdfge
         codepoint = 0;
         advance *= geometryScale;
         #ifdef MSDFGEN_USE_SKIA
-        if (preprocessGeometry)
-            msdfgen::resolveShapeGeometry(shape);
+            if (preprocessGeometry)
+                msdfgen::resolveShapeGeometry(shape);
         #endif
         shape.normalize();
         bounds = shape.getBounds();
