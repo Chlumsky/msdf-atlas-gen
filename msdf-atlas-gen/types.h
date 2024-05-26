@@ -30,6 +30,8 @@ enum class ImageFormat {
     PNG,
     BMP,
     TIFF,
+    RGBA,
+    FL32,
     TEXT,
     TEXT_FLOAT,
     BINARY,

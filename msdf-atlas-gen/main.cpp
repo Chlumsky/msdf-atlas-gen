@@ -83,9 +83,9 @@ ATLAS CONFIGURATION
       Selects the type of atlas to be generated.
 )"
 #ifndef MSDFGEN_DISABLE_PNG
-R"(  -format <png / bmp / tiff / text / textfloat / bin / binfloat / binfloatbe>)"
+R"(  -format <png / bmp / tiff / rgba / fl32 / text / textfloat / bin / binfloat / binfloatbe>)"
 #else
-R"(  -format <bmp / tiff / text / textfloat / bin / binfloat / binfloatbe>)"
+R"(  -format <bmp / tiff / rgba / fl32 / text / textfloat / bin / binfloat / binfloatbe>)"
 #endif
 R"(
       Selects the format for the atlas image output. Some image formats may be incompatible with embedded output formats.
@@ -448,6 +448,10 @@ int main(int argc, const char *const *argv) {
                 config.imageFormat = ImageFormat::BMP;
             else if (ARG_IS("tiff"))
                 config.imageFormat = ImageFormat::TIFF;
+            else if (ARG_IS("rgba"))
+                config.imageFormat = ImageFormat::RGBA;
+            else if (ARG_IS("fl32"))
+                config.imageFormat = ImageFormat::FL32;
             else if (ARG_IS("text"))
                 config.imageFormat = ImageFormat::TEXT;
             else if (ARG_IS("textfloat"))
@@ -460,9 +464,9 @@ int main(int argc, const char *const *argv) {
                 config.imageFormat = ImageFormat::BINARY_FLOAT_BE;
             else {
                 #ifndef MSDFGEN_DISABLE_PNG
-                    ABORT("Invalid image format. Valid formats are: png, bmp, tiff, text, textfloat, bin, binfloat");
+                    ABORT("Invalid image format. Valid formats are: png, bmp, tiff, rgba, fl32, text, textfloat, bin, binfloat");
                 #else
-                    ABORT("Invalid image format. Valid formats are: bmp, tiff, text, textfloat, bin, binfloat");
+                    ABORT("Invalid image format. Valid formats are: bmp, tiff, rgba, fl32, text, textfloat, bin, binfloat");
                 #endif
             }
             imageFormatName = arg;
@@ -979,7 +983,9 @@ int main(int argc, const char *const *argv) {
                 fputs("Warning: You are using a version of this program without PNG image support!\n", stderr);
             #endif
         } else if (cmpExtension(config.imageFilename, ".bmp")) imageExtension = ImageFormat::BMP;
-        else if (cmpExtension(config.imageFilename, ".tif") || cmpExtension(config.imageFilename, ".tiff")) imageExtension = ImageFormat::TIFF;
+        else if (cmpExtension(config.imageFilename, ".tiff") || cmpExtension(config.imageFilename, ".tif")) imageExtension = ImageFormat::TIFF;
+        else if (cmpExtension(config.imageFilename, ".rgba")) imageExtension = ImageFormat::RGBA;
+        else if (cmpExtension(config.imageFilename, ".fl32")) imageExtension = ImageFormat::FL32;
         else if (cmpExtension(config.imageFilename, ".txt")) imageExtension = ImageFormat::TEXT;
         else if (cmpExtension(config.imageFilename, ".bin")) imageExtension = ImageFormat::BINARY;
     }
@@ -1031,6 +1037,7 @@ int main(int argc, const char *const *argv) {
     imageFormatName = nullptr; // No longer consistent with imageFormat
     bool floatingPointFormat = (
         config.imageFormat == ImageFormat::TIFF ||
+        config.imageFormat == ImageFormat::FL32 ||
         config.imageFormat == ImageFormat::TEXT_FLOAT ||
         config.imageFormat == ImageFormat::BINARY_FLOAT ||
         config.imageFormat == ImageFormat::BINARY_FLOAT_BE

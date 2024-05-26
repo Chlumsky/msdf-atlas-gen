@@ -29,6 +29,10 @@ bool saveImage(const msdfgen::BitmapConstRef<byte, N> &bitmap, ImageFormat forma
             return msdfgen::saveBmp(bitmap, filename);
         case ImageFormat::TIFF:
             return false;
+        case ImageFormat::RGBA:
+            return msdfgen::saveRgba(bitmap, filename);
+        case ImageFormat::FL32:
+            return false;
         case ImageFormat::TEXT:
             return saveImageText(bitmap, filename, outputYDirection);
         case ImageFormat::TEXT_FLOAT:
@@ -54,6 +58,10 @@ bool saveImage(const msdfgen::BitmapConstRef<float, N> &bitmap, ImageFormat form
             return msdfgen::saveBmp(bitmap, filename);
         case ImageFormat::TIFF:
             return msdfgen::saveTiff(bitmap, filename);
+        case ImageFormat::RGBA:
+            return msdfgen::saveRgba(bitmap, filename);
+        case ImageFormat::FL32:
+            return msdfgen::saveFl32(bitmap, filename);
         case ImageFormat::TEXT:
             return false;
         case ImageFormat::TEXT_FLOAT:
