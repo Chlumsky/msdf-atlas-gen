@@ -69,6 +69,10 @@ R"(
       Specifies the input character set. Refer to the documentation for format of charset specification. Defaults to ASCII.
   -glyphset <filename>
       Specifies the set of input glyphs as glyph indices within the font file.
+  -chars <charset specification>
+      Specifies the input character set in-line. Refer to documentation for its syntax.
+  -glyphs <glyph set specification>
+      Specifies the set of glyph indices in-line. Refer to documentation for its syntax.
   -allglyphs
       Specifies that all glyphs within the font file are to be processed.
   -fontscale <scale>
@@ -290,6 +294,7 @@ struct FontInput {
     bool variableFont;
     GlyphIdentifierType glyphIdentifierType;
     const char *charsetFilename;
+    const char *charsetString;
     double fontScale;
     const char *fontName;
 };
@@ -487,16 +492,31 @@ int main(int argc, const char *const *argv) {
     #endif
         ARG_CASE("-charset", 1) {
             fontInput.charsetFilename = argv[argPos++];
+            fontInput.charsetString = nullptr;
             fontInput.glyphIdentifierType = GlyphIdentifierType::UNICODE_CODEPOINT;
             continue;
         }
         ARG_CASE("-glyphset", 1) {
             fontInput.charsetFilename = argv[argPos++];
+            fontInput.charsetString = nullptr;
+            fontInput.glyphIdentifierType = GlyphIdentifierType::GLYPH_INDEX;
+            continue;
+        }
+        ARG_CASE("-chars", 1) {
+            fontInput.charsetFilename = nullptr;
+            fontInput.charsetString = argv[argPos++];
+            fontInput.glyphIdentifierType = GlyphIdentifierType::UNICODE_CODEPOINT;
+            continue;
+        }
+        ARG_CASE("-glyphs", 1) {
+            fontInput.charsetFilename = nullptr;
+            fontInput.charsetString = argv[argPos++];
             fontInput.glyphIdentifierType = GlyphIdentifierType::GLYPH_INDEX;
             continue;
         }
         ARG_CASE("-allglyphs", 0) {
             fontInput.charsetFilename = nullptr;
+            fontInput.charsetString = nullptr;
             fontInput.glyphIdentifierType = GlyphIdentifierType::GLYPH_INDEX;
             continue;
         }
@@ -512,7 +532,7 @@ int main(int argc, const char *const *argv) {
             continue;
         }
         ARG_CASE("-and", 0) {
-            if (!fontInput.fontFilename && !fontInput.charsetFilename && fontInput.fontScale < 0)
+            if (!fontInput.fontFilename && !fontInput.charsetFilename && !fontInput.charsetString && fontInput.fontScale < 0)
                 ABORT("No font, character set, or font scale specified before -and separator.");
             if (!fontInputs.empty() && !memcmp(&fontInputs.back(), &fontInput, sizeof(FontInput)))
                 ABORT("No changes between subsequent inputs. A different font, character set, or font scale must be set inbetween -and separators.");
@@ -926,8 +946,9 @@ int main(int argc, const char *const *argv) {
     for (std::vector<FontInput>::reverse_iterator it = fontInputs.rbegin(); it != fontInputs.rend(); ++it) {
         if (!it->fontFilename && nextFontInput->fontFilename)
             it->fontFilename = nextFontInput->fontFilename;
-        if (!it->charsetFilename && nextFontInput->charsetFilename) {
+        if (!(it->charsetFilename || it->charsetString || it->glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX) && (nextFontInput->charsetFilename || nextFontInput->charsetString || nextFontInput->glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX)) {
             it->charsetFilename = nextFontInput->charsetFilename;
+            it->charsetString = nextFontInput->charsetString;
             it->glyphIdentifierType = nextFontInput->glyphIdentifierType;
         }
         if (it->fontScale < 0 && nextFontInput->fontScale >= 0)
@@ -1100,6 +1121,9 @@ int main(int argc, const char *const *argv) {
             if (fontInput.charsetFilename) {
                 if (!charset.load(fontInput.charsetFilename, fontInput.glyphIdentifierType != GlyphIdentifierType::UNICODE_CODEPOINT))
                     ABORT(fontInput.glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX ? "Failed to load glyph set specification." : "Failed to load character set specification.");
+            } else if (fontInput.charsetString) {
+                if (!charset.parse(fontInput.charsetString, strlen(fontInput.charsetString), fontInput.glyphIdentifierType != GlyphIdentifierType::UNICODE_CODEPOINT))
+                    ABORT(fontInput.glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX ? "Failed to parse glyph set specification." : "Failed to parse character set specification.");
             } else if (fontInput.glyphIdentifierType == GlyphIdentifierType::GLYPH_INDEX)
                 msdfgen::getGlyphCount(allGlyphCount, font);
             else
@@ -1411,7 +1435,7 @@ int main(int argc, const char *const *argv) {
             }
         } else {
             result = 1;
-            fputs("Shadron preview not supported in -glyphset mode.\n", stderr);
+            fputs("Shadron preview not supported in glyph set mode.\n", stderr);
         }
     }
 

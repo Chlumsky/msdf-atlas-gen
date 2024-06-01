@@ -5,7 +5,7 @@ This is a utility for generating compact font atlases using [MSDFgen](https://gi
 
 The atlas generator loads a subset of glyphs from a TTF or OTF font file, generates a distance field for each of them, and tightly packs them into an atlas bitmap (example below). The finished atlas and/or its layout metadata can be exported as an [Artery Font](https://github.com/Chlumsky/artery-font-format) file, a plain image file, a CSV sheet or a structured JSON file.
 
-![Atlas example](https://user-images.githubusercontent.com/18639794/76163889-811f2e80-614a-11ea-9b28-1eed54dbb899.png)
+![Atlas example](https://github.com/Chlumsky/msdf-atlas-gen/assets/18639794/ee8bfc77-7d36-4cbb-82df-aa8a02424b4a)
 
 A font atlas is typically stored in texture memory and used to draw text in real-time rendering contexts such as video games.
 
@@ -47,12 +47,15 @@ Use the following command line arguments for the standalone version of the atlas
 
 - `-font <fontfile.ttf/otf>` (required) &ndash; sets the input font file.
   - Alternatively, use `-varfont <fontfile.ttf/otf?var0=value0&var1=value1>` to configure a variable font.
-- `-charset <charset.txt>` &ndash; sets the character set. The ASCII charset will be used if not specified. See [the syntax specification](#character-set-specification-syntax) of `charset.txt`.
+- `-charset <charset.txt>` &ndash; sets the character set. See [the syntax specification](#character-set-specification-syntax) of `charset.txt`.
 - `-glyphset <glyphset.txt>` &ndash; sets the set of input glyphs using their indices within the font file. See [the syntax specification](#glyph-set-specification).
+- `-chars` / `-glyphs <set string>` sets the above character / glyph set in-line. See [the syntax specification](#character-set-specification-syntax).
 - `-allglyphs` &ndash; sets the set of input glyphs to all glyphs present within the font file.
 - `-fontscale <scale>` &ndash; applies a scaling transformation to the font's glyphs. Mainly to be used to generate multiple sizes in a single atlas, otherwise use [`-size`](#glyph-configuration).
 - `-fontname <name>` &ndash; sets a name for the font that will be stored in certain output files as metadata.
 - `-and` &ndash; separates multiple inputs to be combined into a single atlas.
+
+If no character set or glyph set is provided, and `-allglyphs` is not used, the ASCII charset will be used.
 
 ### Bitmap atlas type
 
