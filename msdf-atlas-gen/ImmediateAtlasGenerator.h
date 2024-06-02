@@ -31,6 +31,7 @@ public:
     void setThreadCount(int threadCount);
     /// Allows access to the underlying AtlasStorage
     const AtlasStorage &atlasStorage() const;
+    AtlasStorage &atlasStorage();
     /// Returns the layout of the contained glyphs as a list of GlyphBoxes
     const std::vector<GlyphBox> &getLayout() const;
 

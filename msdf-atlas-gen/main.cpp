@@ -329,12 +329,33 @@ struct Configuration {
     const char *shadronPreviewText;
 };
 
+template <typename T, int N>
+struct CondEC {
+    static void condEC(const msdfgen::BitmapRef<T, N> &sdf, msdfgen::Range pxRange, double minDeviationRatio) { }
+};
+
+template <>
+struct CondEC<float, 3> {
+    static void condEC(const msdfgen::BitmapRef<float, 3> &sdf, msdfgen::Range pxRange, double minDeviationRatio) {
+        puts("EC activated");
+        msdfgen::msdfFastEdgeErrorCorrection(sdf, pxRange, minDeviationRatio);
+    }
+};
+template <>
+struct CondEC<float, 4> {
+    static void condEC(const msdfgen::BitmapRef<float, 4> &sdf, msdfgen::Range pxRange, double minDeviationRatio) {
+        puts("EC activated");
+        msdfgen::msdfFastEdgeErrorCorrection(sdf, pxRange, minDeviationRatio);
+    }
+};
+
 template <typename T, typename S, int N, GeneratorFunction<S, N> GEN_FN>
 static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vector<FontGeometry> &fonts, const Configuration &config) {
-    ImmediateAtlasGenerator<S, N, GEN_FN, BitmapAtlasStorage<T, N> > generator(config.width, config.height);
+    ImmediateAtlasGenerator<S, N, GEN_FN, BitmapOverlappedAtlasStorage<T, N> > generator(config.width, config.height);
     generator.setAttributes(config.generatorAttributes);
     generator.setThreadCount(config.threadCount);
     generator.generate(glyphs.data(), glyphs.size());
+    CondEC<T, N>::condEC((msdfgen::BitmapRef<T, N>) generator.atlasStorage(), config.pxRange, config.generatorAttributes.config.errorCorrection.minDeviationRatio);
     msdfgen::BitmapConstRef<T, N> bitmap = (msdfgen::BitmapConstRef<T, N>) generator.atlasStorage();
 
     bool success = true;
@@ -1064,7 +1085,7 @@ int main(int argc, const char *const *argv) {
         config.imageFormat == ImageFormat::BINARY_FLOAT_BE
     );
     // TODO: In this case (if spacing is -1), the border pixels of each glyph are black, but still computed. For floating-point output, this may play a role.
-    int spacing = config.imageType == ImageType::MSDF || config.imageType == ImageType::MTSDF ? 0 : -1;
+    int spacing = -1;
     double uniformOriginX, uniformOriginY;
 
     // Load fonts

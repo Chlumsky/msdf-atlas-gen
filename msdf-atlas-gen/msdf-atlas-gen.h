@@ -26,6 +26,7 @@
 #include "bitmap-blit.h"
 #include "AtlasStorage.h"
 #include "BitmapAtlasStorage.h"
+#include "BitmapOverlappedAtlasStorage.h"
 #include "TightAtlasPacker.h"
 #include "GridAtlasPacker.h"
 #include "AtlasGenerator.h"
