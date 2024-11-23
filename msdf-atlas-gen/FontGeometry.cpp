@@ -25,9 +25,34 @@ const GlyphGeometry *FontGeometry::GlyphRange::end() const {
     return glyphs->data()+rangeEnd;
 }
 
-FontGeometry::FontGeometry() : geometryScale(1), metrics(), preferredIdentifierType(GlyphIdentifierType::UNICODE_CODEPOINT), glyphs(&ownGlyphs), rangeStart(glyphs->size()), rangeEnd(glyphs->size()) { }
+FontGeometry::FontGeometry() : geometryScale(1), metrics(), preferredIdentifierType(GlyphIdentifierType::UNICODE_CODEPOINT), glyphs(&ownGlyphs), rangeStart(0), rangeEnd(0) { }
 
-FontGeometry::FontGeometry(std::vector<GlyphGeometry> *glyphStorage) : geometryScale(1), metrics(), preferredIdentifierType(GlyphIdentifierType::UNICODE_CODEPOINT), glyphs(glyphStorage), rangeStart(glyphs->size()), rangeEnd(glyphs->size()) { }
+FontGeometry::FontGeometry(std::vector<GlyphGeometry> *glyphStorage) : geometryScale(1), metrics(), preferredIdentifierType(GlyphIdentifierType::UNICODE_CODEPOINT) {
+    glyphs = glyphStorage ? glyphStorage : &ownGlyphs;
+    rangeStart = glyphs->size();
+    rangeEnd = glyphs->size();
+}
+
+FontGeometry::FontGeometry(FontGeometry &&orig) : geometryScale(orig.geometryScale), metrics(orig.metrics), preferredIdentifierType(orig.preferredIdentifierType), glyphs(orig.glyphs), rangeStart(orig.rangeStart), rangeEnd(orig.rangeEnd), glyphsByIndex((std::map<int, size_t> &&) orig.glyphsByIndex), glyphsByCodepoint((std::map<unicode_t, size_t> &&) orig.glyphsByCodepoint), kerning((std::map<std::pair<int, int>, double> &&) orig.kerning), ownGlyphs((std::vector<GlyphGeometry> &&) orig.ownGlyphs), name((std::string &&) orig.name) {
+    if (glyphs == &orig.ownGlyphs)
+        glyphs = &ownGlyphs;
+}
+
+FontGeometry &FontGeometry::operator=(FontGeometry &&orig) {
+    if (this != &orig) {
+        geometryScale = orig.geometryScale;
+        metrics = orig.metrics;
+        glyphs = orig.glyphs == &orig.ownGlyphs ? &ownGlyphs : orig.glyphs;
+        rangeStart = orig.rangeStart;
+        rangeEnd = orig.rangeEnd;
+        glyphsByIndex = (std::map<int, size_t> &&) orig.glyphsByIndex;
+        glyphsByCodepoint = (std::map<unicode_t, size_t> &&) orig.glyphsByCodepoint;
+        kerning = (std::map<std::pair<int, int>, double> &&) orig.kerning;
+        ownGlyphs = (std::vector<GlyphGeometry> &&) orig.ownGlyphs;
+        name = (std::string &&) orig.name;
+    }
+    return *this;
+}
 
 int FontGeometry::loadGlyphRange(msdfgen::FontHandle *font, double fontScale, unsigned rangeStart, unsigned rangeEnd, bool preprocessGeometry, bool enableKerning) {
     if (!(glyphs->size() == this->rangeEnd && loadMetrics(font, fontScale)))
