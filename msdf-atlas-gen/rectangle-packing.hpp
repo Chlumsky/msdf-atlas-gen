@@ -17,6 +17,20 @@ static void copyRectanglePlacement(OrientedRectangle &dst, const OrientedRectang
     dst.rotated = src.rotated;
 }
 
+#define CHUNK_SIZE 256
+
+template <typename RectangleType>
+static int chunkPack(int w, int h, RectangleType *rectangles, int count) {
+    RectanglePacker packer(w, h);
+    while (count > CHUNK_SIZE) {
+        count -= CHUNK_SIZE;
+        if (int result = packer.pack(rectangles, CHUNK_SIZE))
+            return result+count;
+        rectangles += CHUNK_SIZE;
+    }
+    return packer.pack(rectangles, count);
+}
+
 template <typename RectangleType>
 int packRectangles(RectangleType *rectangles, int count, int width, int height, int spacing) {
     if (spacing)
@@ -24,7 +38,8 @@ int packRectangles(RectangleType *rectangles, int count, int width, int height, 
             rectangles[i].w += spacing;
             rectangles[i].h += spacing;
         }
-    int result = RectanglePacker(width+spacing, height+spacing).pack(rectangles, count);
+    //int result = RectanglePacker(width+spacing, height+spacing).pack(rectangles, count);
+    int result = chunkPack(width+spacing, height+spacing, rectangles, count);
     if (spacing)
         for (int i = 0; i < count; ++i) {
             rectangles[i].w -= spacing;
@@ -46,7 +61,8 @@ std::pair<int, int> packRectangles(RectangleType *rectangles, int count, int spa
     SizeSelector sizeSelector(totalArea);
     int width, height;
     while (sizeSelector(width, height)) {
-        if (!RectanglePacker(width+spacing, height+spacing).pack(rectanglesCopy.data(), count)) {
+        //if (!RectanglePacker(width+spacing, height+spacing).pack(rectanglesCopy.data(), count)) {
+        if (!chunkPack(width+spacing, height+spacing, rectanglesCopy.data(), count)) {
             dimensions.first = width;
             dimensions.second = height;
             for (int i = 0; i < count; ++i)

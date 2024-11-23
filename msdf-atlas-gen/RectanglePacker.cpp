@@ -1,8 +1,6 @@
 
 #include "RectanglePacker.h"
 
-#include <algorithm>
-
 namespace msdf_atlas {
 
 #define WORST_FIT 0x7fffffff
@@ -10,7 +8,7 @@ namespace msdf_atlas {
 template <typename T>
 static void removeFromUnorderedVector(std::vector<T> &vector, size_t index) {
     if (index != vector.size()-1)
-        std::swap(vector[index], vector.back());
+        vector[index] = (T &&) vector.back();
     vector.pop_back();
 }
 
@@ -55,7 +53,57 @@ void RectanglePacker::splitSpace(int index, int w, int h) {
 }
 
 int RectanglePacker::pack(Rectangle *rectangles, int count) {
-    std::vector<int> remainingRects(count);
+    struct RectangleCache {
+        Rectangle *rectangle;
+        int bestFit;
+        int bestSpaceIndex;
+    };
+    std::vector<RectangleCache> remainingRects;
+    remainingRects.reserve(count);
+    int modifiedSpaceIndex0 = -1, modifiedSpaceIndex1 = -1;
+    bool spaceAdded = false;
+    RectangleCache initialCache = { rectangles, WORST_FIT, modifiedSpaceIndex0 };
+    for (Rectangle *end = rectangles+count; initialCache.rectangle < end; ++initialCache.rectangle) {
+        if (initialCache.rectangle->w > 0 && initialCache.rectangle->h > 0)
+            remainingRects.push_back(initialCache);
+    }
+    while (!remainingRects.empty()) {
+        int bestRectFit = WORST_FIT;
+        int bestRectIndex = -1;
+        for (int rectIndex = 0; rectIndex < (int) remainingRects.size(); ++rectIndex) {
+            RectangleCache &rectCache = remainingRects[rectIndex];
+            if (rectCache.bestSpaceIndex == modifiedSpaceIndex0 || rectCache.bestSpaceIndex == modifiedSpaceIndex1) {
+                int bestSpaceFit = WORST_FIT;
+                for (int spaceIndex = 0; spaceIndex < (int) spaces.size() && bestSpaceFit > 0; ++spaceIndex) {
+                    if (spaces[spaceIndex].w >= rectCache.rectangle->w && spaces[spaceIndex].h >= rectCache.rectangle->h) {
+                        int fit = rateFit(rectCache.rectangle->w, rectCache.rectangle->h, spaces[spaceIndex].w, spaces[spaceIndex].h);
+                        if (fit < bestSpaceFit) {
+                            bestSpaceFit = fit;
+                            rectCache.bestSpaceIndex = spaceIndex;
+                        }
+                    }
+                }
+                rectCache.bestFit = bestSpaceFit;
+            }
+            if (rectCache.bestFit < bestRectFit) {
+                bestRectFit = rectCache.bestFit;
+                bestRectIndex = rectIndex;
+            }
+        }
+        if (bestRectIndex < 0) // None of the remaining rectangles fits
+            break;
+        RectangleCache &rectCache = remainingRects[bestRectIndex];
+        rectCache.rectangle->x = spaces[rectCache.bestSpaceIndex].x;
+        rectCache.rectangle->y = spaces[rectCache.bestSpaceIndex].y;
+        modifiedSpaceIndex0 = rectCache.bestSpaceIndex;
+        modifiedSpaceIndex1 = (int) (spaces.size()-1);
+        splitSpace(rectCache.bestSpaceIndex, rectCache.rectangle->w, rectCache.rectangle->h);
+        spaceAdded = modifiedSpaceIndex1 < (int) (spaces.size()-1);
+        removeFromUnorderedVector(remainingRects, bestRectIndex);
+    }
+    return (int) remainingRects.size();
+
+    /*std::vector<int> remainingRects(count);
     for (int i = 0; i < count; ++i)
         remainingRects[i] = i;
     while (!remainingRects.empty()) {
@@ -90,7 +138,7 @@ int RectanglePacker::pack(Rectangle *rectangles, int count) {
         splitSpace(bestSpace, rect.w, rect.h);
         removeFromUnorderedVector(remainingRects, bestRect);
     }
-    return (int) remainingRects.size();
+    return (int) remainingRects.size();*/
 }
 
 int RectanglePacker::pack(OrientedRectangle *rectangles, int count) {
