@@ -34,7 +34,7 @@ Notes:
 
 This project can be used either as a library or as a standalone console program.
 Examples of how to use it as a library are available at the [bottom of the page](#library-usage-examples).
-To start using the program immediately, there is a Windows binary available for download in the ["Releases" section](https://github.com/Chlumsky/msdf-atlas-gen/releases).
+To start using the program right away, you may download a Windows binary in the ["Releases" section](https://github.com/Chlumsky/msdf-atlas-gen/releases).
 To build the project from source, you may use the included [CMake script](CMakeLists.txt).
 In its default configuration, it requires [vcpkg](https://vcpkg.io/) as the provider for third-party library dependencies.
 If you set the environment variable `VCPKG_ROOT` to the vcpkg directory, the CMake configuration will take care of fetching all required packages from vcpkg.
@@ -84,11 +84,13 @@ If no character set or glyph set is provided, and `-allglyphs` is not used, the 
 - `bin` &ndash; a sequence of pixel values encoded as raw bytes of data
 - `binfloat` &ndash; a sequence of pixel values encoded as raw 32-bit floating-point values
 
+If format is not specified, it may be deduced from the extension of the `-imageout` argument or other clues.
+
 ### Atlas dimensions
 
 `-dimensions <width> <height>` &ndash; sets fixed atlas dimensions
 
-Alternativelly, the minimum possible dimensions may be selected automatically if a dimensions constraint is set instead:
+Alternatively, the minimum possible dimensions may be selected automatically if a dimensions constraint is set instead:
 
 - `-pots` &ndash; a power-of-two square
 - `-potr` &ndash; a power-of-two square or rectangle (typically 2:1 aspect ratio)
@@ -112,8 +114,23 @@ In that case, these additional options are available to customize the layout:
 Any non-empty subset of the following may be specified:
 
 - `-imageout <filename.*>` &ndash; saves the atlas bitmap as a plain image file. Format matches `-format`
-- `-json <filename.json>` &ndash; writes the atlas's layout data as well as other metrics into a structured JSON file
-- `-csv <filename.csv>` &ndash; writes the glyph layout data into a simple CSV file
+- `-json <filename.json>` &ndash; writes the atlas's layout data as well as other metrics into a structured JSON file <details><summary>JSON fields</summary>
+    - `atlas` section includes the settings used to generate the atlas, including its type and dimensions. The `size` field represents the font size in pixels per em.
+    - If there are multiple input fonts (`-and` parameter), the remaining data are grouped into `variants`, each representing an input font.
+    - `metrics` section contains useful font metric values retrieved from the font. All values are in em's.
+    - `glyphs` is an array of individual glyphs identified by Unicode character index (`unicode`) or glyph index (`index`), depending on whether character set or glyph set mode is used.
+        - `advance` is the horizontal advance in em's.
+        - `planeBounds` represents the glyph quad's bounds in em's relative to the baseline and horizontal cursor position.
+        - `atlasBounds` represents the glyph's bounds in the atlas in pixels.
+    - If available, `kerning` lists all kerning pairs and their advance adjustment (which needs to be added to the base advance of the first glyph in the pair).
+    </details>
+- `-csv <filename.csv>` &ndash; writes the glyph layout data into a simple CSV file <details><summary>CSV columns</summary>
+    - If there are multiple input fonts (`-and` parameter), the first column is the font index, otherwise it is skipped.
+    - Character Unicode value or glyph index, depending on whether character set or glyph set mode is used.
+    - Horizontal advance in em's.
+    - The next 4 columns are the glyph quad's bounds in em's relative to the baseline and cursor. Depending on the `-yorigin` setting, this is either *left, bottom, right, top* (bottom-up Y) or *left, top, right, bottom* (top-down Y).
+    - The last 4 columns the the glyph's bounds in the atlas in pixels. Depending on the `-yorigin` setting, this is either *left, bottom, right, top* (bottom-up Y) or *left, top, right, bottom* (top-down Y).
+    </details>
 - `-arfont <filename.arfont>` &ndash; saves the atlas and its layout data as an [Artery Font](https://github.com/Chlumsky/artery-font-format) file
 - `-shadronpreview <filename.shadron> <sample text>` &ndash; generates a [Shadron script](https://www.arteryengine.com/shadron/) that uses the generated atlas to draw a sample text as a preview
 
@@ -140,6 +157,7 @@ Any non-empty subset of the following may be specified:
 - `-scanline` &ndash; performs an additional scanline pass to fix the signs of the distances
 - `-seed <N>` &ndash; sets the initial seed for the edge coloring heuristic
 - `-threads <N>` &ndash; sets the number of threads for the parallel computation (0 = auto)
+- `-yorigin <bottom / top>` &ndash; specifies the direction of the Y-axis in output coordinates. The default is bottom-up.
 
 Use `-help` for an exhaustive list of options.
 
@@ -215,7 +233,7 @@ bool generateAtlas(const char *fontFilename) {
             ImmediateAtlasGenerator<
                 float, // pixel type of buffer for individual glyphs depends on generator function
                 3, // number of atlas color channels
-                &msdfGenerator, // function to generate bitmaps for individual glyphs
+                msdfGenerator, // function to generate bitmaps for individual glyphs
                 BitmapAtlasStorage<byte, 3> // class that stores the atlas bitmap
                 // For example, a custom atlas storage class that stores it in VRAM can be used.
             > generator(width, height);
@@ -227,7 +245,7 @@ bool generateAtlas(const char *fontFilename) {
             generator.generate(glyphs.data(), glyphs.size());
             // The atlas bitmap can now be retrieved via atlasStorage as a BitmapConstRef.
             // The glyphs array (or fontGeometry) contains positioning data for typesetting text.
-            success = myProject::submitAtlasBitmapAndLayout(generator.atlasStorage(), glyphs);
+            success = my_project::submitAtlasBitmapAndLayout(generator.atlasStorage(), glyphs);
             // Cleanup
             msdfgen::destroyFont(font);
         }
@@ -248,7 +266,7 @@ Acquiring the `GlyphGeometry` objects can be adapted from the previous example.
 
 using namespace msdf_atlas;
 
-using MyDynamicAtlas = DynamicAtlas<ImmediateAtlasGenerator<float, 3, &msdfGenerator, BitmapAtlasStorage<byte, 3>>>;
+using MyDynamicAtlas = DynamicAtlas<ImmediateAtlasGenerator<float, 3, msdfGenerator, BitmapAtlasStorage<byte, 3>>>;
 
 const double pixelRange = 2.0;
 const double glyphScale = 32.0;

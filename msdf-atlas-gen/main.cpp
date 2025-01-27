@@ -2,7 +2,7 @@
 /*
 * MULTI-CHANNEL SIGNED DISTANCE FIELD ATLAS GENERATOR - standalone console program
 * --------------------------------------------------------------------------------
-* A utility by Viktor Chlumsky, (c) 2020 - 2024
+* A utility by Viktor Chlumsky, (c) 2020 - 2025
 */
 
 #ifdef MSDF_ATLAS_STANDALONE
