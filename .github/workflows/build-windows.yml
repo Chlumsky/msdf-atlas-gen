@@ -16,6 +16,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Ensure submodules are checked out
 
     - name: Set up vcpkg
       uses: lukka/run-vcpkg@v11
@@ -31,6 +33,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Ensure submodules are checked out
 
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y build-essential ninja-build cmake
@@ -50,6 +54,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Ensure submodules are checked out
 
     - name: Install dependencies
       run: brew install cmake ninja
@@ -69,6 +75,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Ensure submodules are checked out
 
     - name: Install dependencies
       run: brew install cmake ninja
