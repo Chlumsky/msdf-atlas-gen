@@ -31,7 +31,7 @@ jobs:
       run: cmake --build build --config Release
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows-build
         path: build/bin/Release/msdf-atlas-gen.exe
@@ -60,7 +60,7 @@ jobs:
       run: cmake --build build --config Release
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linux-build
         path: build/bin/msdf-atlas-gen
@@ -89,7 +89,7 @@ jobs:
       run: cmake --build build --config Release
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: mac-x64-build
         path: build/bin/msdf-atlas-gen
@@ -118,7 +118,7 @@ jobs:
       run: cmake --build build --config Release
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: mac-arm64-build
         path: build/bin/msdf-atlas-gen
