@@ -21,6 +21,9 @@ jobs:
 
     - name: Set up vcpkg
       uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: "b02e341c927f16d991edbd915d8ea43eac52096c"
+
     - name: Configure CMake
       run: cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
 
@@ -41,6 +44,8 @@ jobs:
 
     - name: Set up vcpkg
       uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: "b02e341c927f16d991edbd915d8ea43eac52096c"
 
     - name: Configure CMake
       run: cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
@@ -62,6 +67,8 @@ jobs:
 
     - name: Set up vcpkg
       uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: "b02e341c927f16d991edbd915d8ea43eac52096c"
 
     - name: Configure CMake
       run: cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
@@ -83,6 +90,8 @@ jobs:
 
     - name: Set up vcpkg
       uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: "b02e341c927f16d991edbd915d8ea43eac52096c"
 
     - name: Configure CMake
       run: cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
