@@ -3,7 +3,7 @@
 
 namespace msdf_atlas {
 
-static int ceilPOT(int x) {
+static inline int ceilPOT(int x) {
     if (x > 0) {
         int y = 1;
         while (y < x)
