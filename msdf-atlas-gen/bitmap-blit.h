@@ -8,7 +8,6 @@ namespace msdf_atlas {
 
 /*
  * Copies a rectangular section from source bitmap to destination bitmap.
- * Width and height are not checked and must not exceed bitmap bounds!
  */
 
 void blit(const msdfgen::BitmapRef<byte, 1> &dst, const msdfgen::BitmapConstRef<byte, 1> &src, int dx, int dy, int sx, int sy, int w, int h);

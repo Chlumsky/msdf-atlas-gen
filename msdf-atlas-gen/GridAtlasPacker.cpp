@@ -2,22 +2,9 @@
 #include "GridAtlasPacker.h"
 
 #include <algorithm>
+#include "utils.hpp"
 
 namespace msdf_atlas {
-
-static int floorPOT(int x) {
-    int y = 1;
-    while (x >= y && y<<1)
-        y <<= 1;
-    return y>>1;
-}
-
-static int ceilPOT(int x) {
-    int y = 1;
-    while (x > y && y<<1)
-        y <<= 1;
-    return y;
-}
 
 static bool squareConstraint(DimensionsConstraint constraint) {
     switch (constraint) {
@@ -51,9 +38,9 @@ void GridAtlasPacker::lowerToConstraint(int &width, int &height, DimensionsConst
         case DimensionsConstraint::POWER_OF_TWO_RECTANGLE:
         case DimensionsConstraint::POWER_OF_TWO_SQUARE:
             if (width > 0)
-                width = floorPOT(width);
+                width = floorToPOT(width);
             if (height > 0)
-                height = floorPOT(height);
+                height = floorToPOT(height);
             break;
     }
 }
@@ -76,9 +63,9 @@ void GridAtlasPacker::raiseToConstraint(int &width, int &height, DimensionsConst
         case DimensionsConstraint::POWER_OF_TWO_RECTANGLE:
         case DimensionsConstraint::POWER_OF_TWO_SQUARE:
             if (width > 0)
-                width = ceilPOT(width);
+                width = ceilToPOT(width);
             if (height > 0)
-                height = ceilPOT(height);
+                height = ceilToPOT(height);
             break;
     }
 }

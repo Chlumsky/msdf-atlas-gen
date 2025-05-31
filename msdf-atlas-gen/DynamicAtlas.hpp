@@ -1,24 +1,16 @@
 
 #include "DynamicAtlas.h"
 
-namespace msdf_atlas {
+#include "utils.hpp"
 
-static int ceilPOT(int x) {
-    if (x > 0) {
-        int y = 1;
-        while (y < x)
-            y <<= 1;
-        return y;
-    }
-    return 0;
-}
+namespace msdf_atlas {
 
 template <class AtlasGenerator>
 DynamicAtlas<AtlasGenerator>::DynamicAtlas() : side(0), spacing(0), glyphCount(0), totalArea(0) { }
 
 template <class AtlasGenerator>
 template <typename... ARGS>
-DynamicAtlas<AtlasGenerator>::DynamicAtlas(int minSide, ARGS... args) : side(ceilPOT(minSide)), spacing(0), glyphCount(0), totalArea(0), packer(side+spacing, side+spacing), generator(side, side, args...) { }
+DynamicAtlas<AtlasGenerator>::DynamicAtlas(int minSide, ARGS... args) : side(minSide > 0 ? ceilToPOT(minSide) : 0), spacing(0), glyphCount(0), totalArea(0), packer(side+spacing, side+spacing), generator(side, side, args...) { }
 
 template <class AtlasGenerator>
 DynamicAtlas<AtlasGenerator>::DynamicAtlas(AtlasGenerator &&generator) : side(0), spacing(0), glyphCount(0), totalArea(0), generator((AtlasGenerator &&) generator) { }

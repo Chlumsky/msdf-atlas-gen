@@ -451,27 +451,27 @@ int main(int argc, const char *const *argv) {
             #endif
             if (ARG_IS("bmp"))
                 config.imageFormat = ImageFormat::BMP;
-            else if (ARG_IS("tiff"))
+            else if (ARG_IS("tiff") || ARG_IS("tif"))
                 config.imageFormat = ImageFormat::TIFF;
             else if (ARG_IS("rgba"))
                 config.imageFormat = ImageFormat::RGBA;
             else if (ARG_IS("fl32"))
                 config.imageFormat = ImageFormat::FL32;
-            else if (ARG_IS("text"))
+            else if (ARG_IS("text") || ARG_IS("txt"))
                 config.imageFormat = ImageFormat::TEXT;
-            else if (ARG_IS("textfloat"))
+            else if (ARG_IS("textfloat") || ARG_IS("txtfloat"))
                 config.imageFormat = ImageFormat::TEXT_FLOAT;
-            else if (ARG_IS("bin"))
+            else if (ARG_IS("bin") || ARG_IS("binary"))
                 config.imageFormat = ImageFormat::BINARY;
-            else if (ARG_IS("binfloat"))
+            else if (ARG_IS("binfloat") || ARG_IS("binfloatle"))
                 config.imageFormat = ImageFormat::BINARY_FLOAT;
             else if (ARG_IS("binfloatbe"))
                 config.imageFormat = ImageFormat::BINARY_FLOAT_BE;
             else {
                 #ifndef MSDFGEN_DISABLE_PNG
-                    ABORT("Invalid image format. Valid formats are: png, bmp, tiff, rgba, fl32, text, textfloat, bin, binfloat");
+                    ABORT("Invalid image format. Valid formats are: png, bmp, tiff, rgba, fl32, text, textfloat, bin, binfloat, binfloatbe");
                 #else
-                    ABORT("Invalid image format. Valid formats are: bmp, tiff, rgba, fl32, text, textfloat, bin, binfloat");
+                    ABORT("Invalid image format. Valid formats are: bmp, tiff, rgba, fl32, text, textfloat, bin, binfloat, binfloatbe");
                 #endif
             }
             imageFormatName = arg;

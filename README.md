@@ -79,12 +79,16 @@ If no character set or glyph set is provided, and `-allglyphs` is not used, the 
 - `png` &ndash; a compressed PNG image
 - `bmp` &ndash; an uncompressed BMP image
 - `tiff` &ndash; an uncompressed floating-point TIFF image
+- `rgba` &ndash; an uncompressed [RGBA](https://github.com/bzotto/rgba_bitmap) file
+- `fl32` &ndash; an uncompressed floating-point FL32 file
 - `text` &ndash; a sequence of pixel values in plain text
 - `textfloat` &ndash; a sequence of floating-point pixel values in plain text
 - `bin` &ndash; a sequence of pixel values encoded as raw bytes of data
-- `binfloat` &ndash; a sequence of pixel values encoded as raw 32-bit floating-point values
+- `binfloat` &ndash; a sequence of pixel values encoded as raw 32-bit floating-point values (little endian, `binfloatbe` for big endian)
 
 If format is not specified, it may be deduced from the extension of the `-imageout` argument or other clues.
+
+Please note that all color values must be interpreted as if they were linear (not sRGB) like the alpha channel, even if the image format implies otherwise.
 
 ### Atlas dimensions
 
