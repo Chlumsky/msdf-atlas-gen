@@ -52,6 +52,8 @@ public:
     double getGeometryScale() const;
     /// Returns the glyph's shape
     const msdfgen::Shape &getShape() const;
+    /// Sets the glyph's flag for inverting the y-axis
+    void setInverseYAxis(bool inverse);
     /// Returns the glyph's shape's raw bounds
     const msdfgen::Shape::Bounds &getShapeBounds() const;
     /// Returns the glyph's advance
