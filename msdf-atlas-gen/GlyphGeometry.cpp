@@ -213,6 +213,10 @@ const msdfgen::Shape &GlyphGeometry::getShape() const {
     return shape;
 }
 
+void GlyphGeometry::setInverseYAxis(bool inverse) {
+    shape.inverseYAxis = inverse;
+}
+
 const msdfgen::Shape::Bounds &GlyphGeometry::getShapeBounds() const {
     return bounds;
 }
