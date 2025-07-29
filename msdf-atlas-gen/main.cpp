@@ -1026,8 +1026,6 @@ int main(int argc, const char *const *argv) {
                 fprintf(stderr, "Warning: Could not infer image format from file extension, %s will be used.\n", imageFormatName);
         }
     }
-    if (config.imageType == ImageType::MTSDF && config.imageFormat == ImageFormat::BMP)
-        ABORT("Atlas type not compatible with image format. MTSDF requires a format with alpha channel.");
 #ifndef MSDF_ATLAS_NO_ARTERY_FONT
     if (config.arteryFontFilename && !(config.imageFormat == ImageFormat::PNG || config.imageFormat == ImageFormat::BINARY || config.imageFormat == ImageFormat::BINARY_FLOAT)) {
         config.arteryFontFilename = nullptr;
