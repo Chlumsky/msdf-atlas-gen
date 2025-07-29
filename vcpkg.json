@@ -5,6 +5,7 @@
     "description": "Multi-channel signed distance field atlas generator",
     "homepage": "https://github.com/Chlumsky/msdf-atlas-gen",
     "license": "MIT",
+    "builtin-baseline": "b02e341c927f16d991edbd915d8ea43eac52096c",
     "dependencies": [
         "freetype",
         "libpng"

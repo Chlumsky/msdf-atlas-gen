@@ -1,0 +1,118 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual triggering of the workflow
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Ensure submodules are checked out
+
+    - name: Set up vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: "b02e341c927f16d991edbd915d8ea43eac52096c"
+
+    - name: Configure CMake
+      run: cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
+
+    - name: Build project
+      run: cmake --build build --config Release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: build/bin/Release/msdf-atlas-gen.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Ensure submodules are checked out
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y build-essential ninja-build cmake
+
+    - name: Set up vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: "b02e341c927f16d991edbd915d8ea43eac52096c"
+
+    - name: Configure CMake
+      run: cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build project
+      run: cmake --build build --config Release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-build
+        path: build/bin/msdf-atlas-gen
+
+  build-mac-x64:
+    runs-on: macos-13
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Ensure submodules are checked out
+
+    - name: Set up vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: "b02e341c927f16d991edbd915d8ea43eac52096c"
+
+    - name: Configure CMake
+      run: cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build project
+      run: cmake --build build --config Release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mac-x64-build
+        path: build/bin/msdf-atlas-gen
+
+  build-mac-arm64:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Ensure submodules are checked out
+
+    - name: Set up vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: "b02e341c927f16d991edbd915d8ea43eac52096c"
+
+    - name: Configure CMake
+      run: cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build project
+      run: cmake --build build --config Release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mac-arm64-build
+        path: build/bin/msdf-atlas-gen
