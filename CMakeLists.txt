@@ -103,7 +103,7 @@ target_compile_definitions(msdf-atlas-gen PUBLIC
     MSDF_ATLAS_COPYRIGHT_YEAR=${MSDF_ATLAS_COPYRIGHT_YEAR}
 )
 target_include_directories(msdf-atlas-gen INTERFACE
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 if(MSDF_ATLAS_NO_ARTERY_FONT)
