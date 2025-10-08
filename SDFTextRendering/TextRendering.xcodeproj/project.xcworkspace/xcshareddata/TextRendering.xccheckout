@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>02F19FDE-698F-46E1-B336-6DA5C4231324</string>
+	<key>IDESourceControlProjectName</key>
+	<string>TextRendering</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>75F06102AEF08EEE87EA558C1549A316D05E07B2</key>
+		<string>github.com:warrenm/metal-by-example.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>TextRendering/TextRendering.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>75F06102AEF08EEE87EA558C1549A316D05E07B2</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>github.com:warrenm/metal-by-example.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>75F06102AEF08EEE87EA558C1549A316D05E07B2</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>75F06102AEF08EEE87EA558C1549A316D05E07B2</string>
+			<key>IDESourceControlWCCName</key>
+			<string>metal-by-example</string>
+		</dict>
+	</array>
+</dict>
+</plist>
