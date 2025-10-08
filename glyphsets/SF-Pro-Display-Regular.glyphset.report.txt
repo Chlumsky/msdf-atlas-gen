@@ -1,0 +1,12 @@
+Script coverage for C:\Users\DJBen\Downloads\SF-Pro-Display-Regular.otf
+Arabic       : 0
+Bengali      : 0
+Cyrillic     : 0
+Devanagari   : 0
+Greek        : 0
+Hebrew       : 0
+Hiragana     : 0
+Katakana     : 0
+Latin        : 746
+Punctuation  : 77
+Thai         : 0

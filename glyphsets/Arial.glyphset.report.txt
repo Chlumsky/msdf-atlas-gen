@@ -1,0 +1,12 @@
+Script coverage for C:\Windows\Fonts\arial.ttf
+Arabic       : 695
+Bengali      : 0
+Cyrillic     : 0
+Devanagari   : 0
+Greek        : 0
+Hebrew       : 0
+Hiragana     : 0
+Katakana     : 0
+Latin        : 895
+Punctuation  : 90
+Thai         : 0
