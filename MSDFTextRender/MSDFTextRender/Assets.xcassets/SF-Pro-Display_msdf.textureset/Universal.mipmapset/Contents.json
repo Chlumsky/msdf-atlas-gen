@@ -1,0 +1,12 @@
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "levels" : [
+    {
+      "filename" : "SF-Pro-Display_msdf.png",
+      "mipmap-level" : "base"
+    }
+  ]
+}

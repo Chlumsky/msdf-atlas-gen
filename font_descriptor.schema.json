@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "type": "object",
+  "properties": {
+    "atlas": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "distanceRange": {
+          "type": "number"
+        },
+        "distanceRangeMiddle": {
+          "type": "number"
+        },
+        "size": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "yOrigin": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "distanceRange",
+        "distanceRangeMiddle",
+        "size",
+        "width",
+        "height",
+        "yOrigin"
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "emSize": {
+          "type": "number"
+        },
+        "lineHeight": {
+          "type": "number"
+        },
+        "ascender": {
+          "type": "number"
+        },
+        "descender": {
+          "type": "number"
+        },
+        "underlineY": {
+          "type": "number"
+        },
+        "underlineThickness": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "emSize",
+        "lineHeight",
+        "ascender",
+        "descender",
+        "underlineY",
+        "underlineThickness"
+      ]
+    },
+    "glyphs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "number"
+          },
+          "advance": {
+            "type": "number"
+          },
+          "planeBounds": {
+            "type": "object",
+            "properties": {
+              "left": {
+                "type": "number"
+              },
+              "bottom": {
+                "type": "number"
+              },
+              "right": {
+                "type": "number"
+              },
+              "top": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "left",
+              "bottom",
+              "right",
+              "top"
+            ]
+          },
+          "atlasBounds": {
+            "type": "object",
+            "properties": {
+              "left": {
+                "type": "number"
+              },
+              "bottom": {
+                "type": "number"
+              },
+              "right": {
+                "type": "number"
+              },
+              "top": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "left",
+              "bottom",
+              "right",
+              "top"
+            ]
+          }
+        },
+        "required": [
+          "index",
+          "advance"
+        ]
+      }
+    },
+    "kerning": {
+      "type": "array",
+      "items": {}
+    }
+  },
+  "required": [
+    "atlas",
+    "metrics",
+    "glyphs",
+    "kerning"
+  ]
+}
