@@ -34,6 +34,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var uniforms: UnsafeMutablePointer<Uniforms>
     
     var projectionMatrix: matrix_float4x4 = matrix_identity_float4x4
+    var zoomScale: Float = 1.0
     
     let margin: CGFloat = 24.0
     let fontSize: CGFloat = 36.0
@@ -203,12 +204,15 @@ class Renderer: NSObject, MTKViewDelegate {
     
     private func rebuildTextMesh(for view: MTKView) {
         guard let builder = textMeshBuilder else { return }
-        let scale = CGFloat(view.contentScaleFactor)
-        let layoutSize = view.bounds.size
+        let viewScale = CGFloat(view.contentScaleFactor)
+        let zoom = max(CGFloat(zoomScale), 0.0001)
+        let layoutWidth = max(view.bounds.width / zoom, 1.0)
+        let layoutHeight = max(view.bounds.height / zoom, 1.0)
+        let adjustedMargin = margin / zoom
         textMesh = builder.buildMesh(for: textContent,
-                                     in: layoutSize,
-                                     margin: margin,
-                                     scale: scale)
+                                     in: CGSize(width: layoutWidth, height: layoutHeight),
+                                     margin: adjustedMargin,
+                                     scale: viewScale)
     }
     
     private func updateProjection(for drawableSize: CGSize) {
@@ -226,7 +230,8 @@ class Renderer: NSObject, MTKViewDelegate {
     
     private func updateUniforms() {
         uniforms[0].projectionMatrix = projectionMatrix
-        uniforms[0].modelViewMatrix = matrix_identity_float4x4
+        let scaleMatrix = matrix_scale(zoomScale, zoomScale, 1.0)
+        uniforms[0].modelViewMatrix = scaleMatrix
         uniforms[0].textColor = textColor
         uniforms[0].unitRange = atlasUnitRange
         uniforms[0].smoothness = smoothness
@@ -294,6 +299,17 @@ class Renderer: NSObject, MTKViewDelegate {
         rebuildTextMesh(for: view)
     }
     
+    @MainActor
+    func rebuildTextMeshForCurrentView() {
+        guard let view = view else { return }
+        rebuildTextMesh(for: view)
+    }
+    
+    @MainActor
+    func updateZoom(zoomScale: CGFloat) {
+        self.zoomScale = max(Float(zoomScale), 0.0001)
+    }
+    
     private static func composeParagraphText() -> String {
         let english = """
         English:
@@ -322,5 +338,14 @@ private func matrix_ortho(width: Float, height: Float) -> matrix_float4x4 {
         SIMD4<Float>(0, sy, 0, 0),
         SIMD4<Float>(0, 0, 1, 0),
         SIMD4<Float>(-1, 1, 0, 1)
+    ))
+}
+
+private func matrix_scale(_ sx: Float, _ sy: Float, _ sz: Float) -> matrix_float4x4 {
+    matrix_float4x4(columns: (
+        SIMD4<Float>(sx, 0, 0, 0),
+        SIMD4<Float>(0, sy, 0, 0),
+        SIMD4<Float>(0, 0, sz, 0),
+        SIMD4<Float>(0, 0, 0, 1)
     ))
 }
