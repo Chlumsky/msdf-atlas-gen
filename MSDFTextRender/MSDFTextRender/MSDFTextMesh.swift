@@ -25,11 +25,15 @@ struct MSDFTextMesh {
 final class MSDFTextMeshBuilder {
     private let device: MTLDevice
     private let atlas: MSDFAtlas
-    private let font: CTFont
+    private var font: CTFont
 
     init(device: MTLDevice, atlas: MSDFAtlas, font: CTFont) {
         self.device = device
         self.atlas = atlas
+        self.font = font
+    }
+    
+    func updateFont(_ font: CTFont) {
         self.font = font
     }
 

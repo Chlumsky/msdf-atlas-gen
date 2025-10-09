@@ -34,10 +34,12 @@ class Renderer: NSObject, MTKViewDelegate {
     var uniforms: UnsafeMutablePointer<Uniforms>
     
     var projectionMatrix: matrix_float4x4 = matrix_identity_float4x4
-    var zoomScale: Float = 1.0
+    var zoomScale: CGFloat = 1.0
     
     let margin: CGFloat = 24.0
-    let fontSize: CGFloat = 36.0
+    let baseFontSize: CGFloat = 36.0
+    private let baseFont: CTFont
+    private var currentFontSize: CGFloat
     var atlasPxRange: Float
     var atlasUnitRange = SIMD2<Float>(repeating: 0)
     var textColor = SIMD4<Float>(1, 1, 1, 1)
@@ -103,17 +105,20 @@ class Renderer: NSObject, MTKViewDelegate {
             return nil
         }
         
+        guard let ctFont = Renderer.loadFont(at: fontURL, size: baseFontSize) else {
+            print("Unable to load SF Pro Display font.")
+            return nil
+        }
+        
+        baseFont = ctFont
+        currentFontSize = baseFontSize
+        textMeshBuilder = MSDFTextMeshBuilder(device: device, atlas: atlasData, font: ctFont)
+        
         textContent = Renderer.composeParagraphText()
         super.init()
         
         view = metalKitView
         
-        guard let ctFont = Renderer.loadFont(at: fontURL, size: fontSize) else {
-            print("Unable to load SF Pro Display font.")
-            return nil
-        }
-        
-        textMeshBuilder = MSDFTextMeshBuilder(device: device, atlas: atlasData, font: ctFont)
         rebuildTextMesh(for: metalKitView)
         updateProjection(for: metalKitView.drawableSize)
     }
@@ -204,14 +209,13 @@ class Renderer: NSObject, MTKViewDelegate {
     
     private func rebuildTextMesh(for view: MTKView) {
         guard let builder = textMeshBuilder else { return }
-        let viewScale = CGFloat(view.contentScaleFactor)
-        let zoom = max(CGFloat(zoomScale), 0.0001)
-        let layoutWidth = max(view.bounds.width / zoom, 1.0)
-        let layoutHeight = max(view.bounds.height / zoom, 1.0)
-        let adjustedMargin = margin / zoom
+        updateFontForCurrentZoom()
+        let viewScale = max(CGFloat(view.contentScaleFactor), 0.0001)
+        let layoutWidth = max(view.bounds.width, 1.0)
+        let layoutHeight = max(view.bounds.height, 1.0)
         textMesh = builder.buildMesh(for: textContent,
                                      in: CGSize(width: layoutWidth, height: layoutHeight),
-                                     margin: adjustedMargin,
+                                     margin: margin,
                                      scale: viewScale)
     }
     
@@ -219,6 +223,14 @@ class Renderer: NSObject, MTKViewDelegate {
         guard drawableSize.width > 0, drawableSize.height > 0 else { return }
         projectionMatrix = matrix_ortho(width: Float(drawableSize.width),
                                         height: Float(drawableSize.height))
+    }
+    
+    private func updateFontForCurrentZoom() {
+        let targetSize = max(baseFontSize * zoomScale, 0.0001)
+        guard abs(targetSize - currentFontSize) > 0.0001 else { return }
+        let scaledFont = CTFontCreateCopyWithAttributes(baseFont, targetSize, nil, nil)
+        textMeshBuilder?.updateFont(scaledFont)
+        currentFontSize = targetSize
     }
     
     private func updateDynamicBufferState() {
@@ -230,8 +242,7 @@ class Renderer: NSObject, MTKViewDelegate {
     
     private func updateUniforms() {
         uniforms[0].projectionMatrix = projectionMatrix
-        let scaleMatrix = matrix_scale(zoomScale, zoomScale, 1.0)
-        uniforms[0].modelViewMatrix = scaleMatrix
+        uniforms[0].modelViewMatrix = matrix_identity_float4x4
         uniforms[0].textColor = textColor
         uniforms[0].unitRange = atlasUnitRange
         uniforms[0].smoothness = smoothness
@@ -307,7 +318,8 @@ class Renderer: NSObject, MTKViewDelegate {
     
     @MainActor
     func updateZoom(zoomScale: CGFloat) {
-        self.zoomScale = max(Float(zoomScale), 0.0001)
+        self.zoomScale = max(zoomScale, 0.0001)
+        updateFontForCurrentZoom()
     }
     
     private static func composeParagraphText() -> String {
@@ -338,14 +350,5 @@ private func matrix_ortho(width: Float, height: Float) -> matrix_float4x4 {
         SIMD4<Float>(0, sy, 0, 0),
         SIMD4<Float>(0, 0, 1, 0),
         SIMD4<Float>(-1, 1, 0, 1)
-    ))
-}
-
-private func matrix_scale(_ sx: Float, _ sy: Float, _ sz: Float) -> matrix_float4x4 {
-    matrix_float4x4(columns: (
-        SIMD4<Float>(sx, 0, 0, 0),
-        SIMD4<Float>(0, sy, 0, 0),
-        SIMD4<Float>(0, 0, sz, 0),
-        SIMD4<Float>(0, 0, 0, 1)
     ))
 }

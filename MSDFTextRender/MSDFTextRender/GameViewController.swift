@@ -14,12 +14,9 @@ class GameViewController: UIViewController {
     var renderer: Renderer!
     var mtkView: MTKView!
     
-    private var baseDrawableSize: CGSize = .zero
-    private var currentDrawableSize: CGSize = .zero
     private var zoomScale: CGFloat = 1.0
     private let minZoomScale: CGFloat = 0.5
     private let maxZoomScale: CGFloat = 3.0
-    private let metalMaxDrawableDimension: CGFloat = 8192.0
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -51,8 +48,6 @@ class GameViewController: UIViewController {
         mtkView.delegate = renderer
         mtkView.isMultipleTouchEnabled = true
         
-        baseDrawableSize = mtkView.drawableSize
-        currentDrawableSize = mtkView.drawableSize
         configureGestureRecognizers(for: mtkView)
         applyViewport(scale: zoomScale)
     }
@@ -60,10 +55,7 @@ class GameViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         guard let mtkView = mtkView else { return }
-        let scaleFactor = mtkView.contentScaleFactor
-        baseDrawableSize = CGSize(width: mtkView.bounds.width * scaleFactor,
-                                  height: mtkView.bounds.height * scaleFactor)
-        applyViewport(scale: zoomScale)
+        renderer?.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
     }
     
     private func configureGestureRecognizers(for view: MTKView) {
@@ -73,27 +65,11 @@ class GameViewController: UIViewController {
     }
     
     private func applyViewport(scale: CGFloat) {
-        guard let mtkView = mtkView, let renderer = renderer else { return }
-        let previousScale = zoomScale
-        // Clamp the scale so drawable size never exceeds the device texture limit.
-        let widthLimit = baseDrawableSize.width > 0 ? metalMaxDrawableDimension / baseDrawableSize.width : maxZoomScale
-        let heightLimit = baseDrawableSize.height > 0 ? metalMaxDrawableDimension / baseDrawableSize.height : maxZoomScale
-        let hardwareLimit = min(widthLimit, heightLimit)
-        let allowedMaxScale = min(maxZoomScale, hardwareLimit)
-        let allowedMinScale = min(minZoomScale, allowedMaxScale)
-        let clampedScale = max(min(scale, allowedMaxScale), allowedMinScale)
+        guard let renderer = renderer else { return }
+        let clampedScale = max(min(scale, maxZoomScale), minZoomScale)
         zoomScale = clampedScale
         renderer.updateZoom(zoomScale: zoomScale)
-        
-        let drawableSize = CGSize(width: baseDrawableSize.width * zoomScale,
-                                  height: baseDrawableSize.height * zoomScale)
-        if drawableSize != currentDrawableSize {
-            mtkView.drawableSize = drawableSize
-            currentDrawableSize = drawableSize
-            renderer.mtkView(mtkView, drawableSizeWillChange: drawableSize)
-        } else if abs(previousScale - zoomScale) > 0.0001 {
-            renderer.rebuildTextMeshForCurrentView()
-        }
+        renderer.rebuildTextMeshForCurrentView()
     }
     
     @objc private func handlePinch(_ recognizer: UIPinchGestureRecognizer) {
