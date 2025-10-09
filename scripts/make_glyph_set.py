@@ -50,11 +50,23 @@ def iter_codepoints(range_pairs: Sequence[Tuple[int, int]]) -> Iterable[int]:
 
 
 def read_ranges_from_file(path: Path) -> List[str]:
-    text = path.read_text(encoding="utf-8")
-    # Support comma, newline, or whitespace separated tokens.
-    tokens = []
-    for chunk in text.replace(",", " ").split():
-        tokens.append(chunk.strip())
+    """
+    Read Unicode range tokens from a text file.
+
+    Supports the new line-delimited format (one token or range per line),
+    while remaining backward compatible with comma-separated lists. Inline
+    comments starting with '#' are ignored. Blank lines are skipped.
+    """
+    tokens: List[str] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        # Strip inline comments and surrounding whitespace
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        # Allow either a single token per line or comma-separated on a line
+        for chunk in line.replace(",", " ").split():
+            if chunk:
+                tokens.append(chunk)
     return tokens
 
 
@@ -124,7 +136,10 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "--ranges-file",
         type=Path,
-        help="Optional path to a text file containing comma or newline separated ranges.",
+        help=(
+            "Optional path to a text file containing line-delimited "
+            "or comma-separated Unicode ranges (supports '#' comments)."
+        ),
     )
     parser.add_argument(
         "--output",

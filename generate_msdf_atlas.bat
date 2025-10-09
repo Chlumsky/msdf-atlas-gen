@@ -16,7 +16,7 @@ set "BASENAME2=Arial_msdf"
 echo Generating MSDF atlas and JSON...
 "%MSDF_EXE%" ^
   -font "%FONT%" ^
-  -glyphset "%~dp0glyphsets\SF-Pro-Display-Regular.glyphset.txt" ^
+  -glyphset "%~dp0scripts\glyph_ranges.txt" ^
   -type msdf ^
   -size 48 ^
   -pxrange 4 ^
