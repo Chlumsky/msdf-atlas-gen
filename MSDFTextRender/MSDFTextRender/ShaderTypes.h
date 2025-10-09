@@ -44,9 +44,9 @@ typedef struct
     matrix_float4x4 projectionMatrix;
     matrix_float4x4 modelViewMatrix;
     vector_float4 textColor;
-    float pxRange;
+    vector_float2 unitRange;
     float smoothness;
-    float padding[2];
+    float padding;
 } Uniforms;
 
 #endif /* ShaderTypes_h */

@@ -48,11 +48,11 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
     
     float3 sample = colorMap.sample(colorSampler, in.texCoord).rgb;
     float msdf = max(min(sample.r, sample.g), min(max(sample.r, sample.g), sample.b));
-    float signedDistance = msdf - 0.5;
-    float pxDistance = uniforms.pxRange * signedDistance;
-    float width = fwidth(pxDistance) * uniforms.smoothness;
-    width = max(width, 1e-4f);
-    float alpha = smoothstep(-width, width, pxDistance);
+    float2 screenTexSize = 1.0f / fwidth(in.texCoord);
+    float screenPxRange = max(0.5f * dot(uniforms.unitRange, screenTexSize), 1.0f);
+    screenPxRange *= uniforms.smoothness;
+    float screenPxDistance = screenPxRange * (msdf - 0.5f);
+    float alpha = clamp(screenPxDistance + 0.5f, 0.0f, 1.0f);
     
     float4 color = uniforms.textColor;
     color.a *= alpha;

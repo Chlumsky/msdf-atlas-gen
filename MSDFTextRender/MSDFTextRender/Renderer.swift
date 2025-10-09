@@ -38,6 +38,7 @@ class Renderer: NSObject, MTKViewDelegate {
     let margin: CGFloat = 24.0
     let fontSize: CGFloat = 36.0
     var atlasPxRange: Float
+    var atlasUnitRange = SIMD2<Float>(repeating: 0)
     var textColor = SIMD4<Float>(1, 1, 1, 1)
     var smoothness: Float = 1.0
     
@@ -94,6 +95,8 @@ class Renderer: NSObject, MTKViewDelegate {
             atlasData = try MSDFAtlas.load(from: atlasJSONURL)
             atlasPxRange = atlasData.pxRange
             atlasTexture = try Renderer.loadTexture(device: device)
+            atlasUnitRange = SIMD2<Float>(atlasPxRange / Float(atlasTexture.width),
+                                          atlasPxRange / Float(atlasTexture.height))
         } catch {
             print("Unable to load atlas resources. Error: \(error)")
             return nil
@@ -152,6 +155,16 @@ class Renderer: NSObject, MTKViewDelegate {
         pipelineDescriptor.depthAttachmentPixelFormat = metalKitView.depthStencilPixelFormat
         pipelineDescriptor.stencilAttachmentPixelFormat = metalKitView.depthStencilPixelFormat
         
+        if let attachment = pipelineDescriptor.colorAttachments[0] {
+            attachment.isBlendingEnabled = true
+            attachment.sourceRGBBlendFactor = .sourceAlpha
+            attachment.destinationRGBBlendFactor = .oneMinusSourceAlpha
+            attachment.rgbBlendOperation = .add
+            attachment.sourceAlphaBlendFactor = .one
+            attachment.destinationAlphaBlendFactor = .oneMinusSourceAlpha
+            attachment.alphaBlendOperation = .add
+        }
+        
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
     
@@ -162,7 +175,10 @@ class Renderer: NSObject, MTKViewDelegate {
             .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
             .textureStorageMode: NSNumber(value: MTLStorageMode.private.rawValue)
         ]
-        return try textureLoader.newTexture(name: "SF-Pro-Display_msdf", scaleFactor: 1.0, bundle: .main, options: options)
+        return try textureLoader.newTexture(name: "SF-Pro-Display_msdf",
+                                            scaleFactor: 1.0,
+                                            bundle: .main,
+                                            options: options)
     }
     
     private static func loadFont(at url: URL, size: CGFloat) -> CTFont? {
@@ -212,8 +228,9 @@ class Renderer: NSObject, MTKViewDelegate {
         uniforms[0].projectionMatrix = projectionMatrix
         uniforms[0].modelViewMatrix = matrix_identity_float4x4
         uniforms[0].textColor = textColor
-        uniforms[0].pxRange = atlasPxRange
+        uniforms[0].unitRange = atlasUnitRange
         uniforms[0].smoothness = smoothness
+        uniforms[0].padding = 0
     }
     
     func draw(in view: MTKView) {
