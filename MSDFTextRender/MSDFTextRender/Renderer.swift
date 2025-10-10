@@ -192,15 +192,32 @@ class Renderer: NSObject, MTKViewDelegate {
               let cgFont = CGFont(dataProvider) else {
             return nil
         }
-        var error: Unmanaged<CFError>?
-        if !CTFontManagerRegisterGraphicsFont(cgFont, &error) {
-            if let cfError = error?.takeRetainedValue() {
-                let codeValue = CFErrorGetCode(cfError)
-                if let ctError = CTFontManagerError(rawValue: codeValue),
-                   ctError == .alreadyRegistered {
-                    // Font already registered; safe to ignore.
-                } else {
-                    print("Font registration error: \(cfError)")
+        
+        // Use the new API for iOS 18+ and fall back to the deprecated one for older versions
+        if #available(iOS 18.0, *) {
+            var error: Unmanaged<CFError>?
+            if !CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error) {
+                if let cfError = error?.takeRetainedValue() {
+                    let codeValue = CFErrorGetCode(cfError)
+                    if let ctError = CTFontManagerError(rawValue: codeValue),
+                       ctError == .alreadyRegistered {
+                        // Font already registered; safe to ignore.
+                    } else {
+                        print("Font registration error: \(cfError)")
+                    }
+                }
+            }
+        } else {
+            var error: Unmanaged<CFError>?
+            if !CTFontManagerRegisterGraphicsFont(cgFont, &error) {
+                if let cfError = error?.takeRetainedValue() {
+                    let codeValue = CFErrorGetCode(cfError)
+                    if let ctError = CTFontManagerError(rawValue: codeValue),
+                       ctError == .alreadyRegistered {
+                        // Font already registered; safe to ignore.
+                    } else {
+                        print("Font registration error: \(cfError)")
+                    }
                 }
             }
         }
