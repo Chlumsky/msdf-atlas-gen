@@ -19,7 +19,7 @@ echo Generating MSDF atlas and JSON...
   -glyphset "%~dp0scripts\glyph_ranges.txt" ^
   -type msdf ^
   -size 64 ^
-  -pxrange 4 ^
+  -pxrange 2 ^
   -imageout "%OUTDIR%\%BASENAME%.png" ^
   -json "%OUTDIR%\%BASENAME%.json"
 
