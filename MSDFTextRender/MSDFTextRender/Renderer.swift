@@ -43,8 +43,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var atlasPxRange: Float
     var atlasUnitRange = SIMD2<Float>(repeating: 0)
     var textColor = SIMD4<Float>(1, 1, 1, 1)
-    var smoothness: Float = 1.0
-    
+
     @MainActor
     init?(metalKitView: MTKView) {
         guard let device = metalKitView.device,
@@ -178,8 +177,10 @@ class Renderer: NSObject, MTKViewDelegate {
         let textureLoader = MTKTextureLoader(device: device)
         let options: [MTKTextureLoader.Option: Any] = [
             .SRGB: false,
+            .generateMipmaps: false,
+            .origin: MTKTextureLoader.Origin.bottomLeft,
             .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
-            .textureStorageMode: NSNumber(value: MTLStorageMode.private.rawValue)
+            .textureStorageMode: NSNumber(value: MTLStorageMode.private.rawValue),
         ]
         return try textureLoader.newTexture(name: "SF-Pro-Display_msdf",
                                             scaleFactor: 1.0,
@@ -262,8 +263,7 @@ class Renderer: NSObject, MTKViewDelegate {
         uniforms[0].modelViewMatrix = matrix_identity_float4x4
         uniforms[0].textColor = textColor
         uniforms[0].unitRange = atlasUnitRange
-        uniforms[0].smoothness = smoothness
-        uniforms[0].padding = 0
+        uniforms[0].padding = .zero
     }
     
     func draw(in view: MTKView) {

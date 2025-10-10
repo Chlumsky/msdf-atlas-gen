@@ -8,5 +8,8 @@
       "filename" : "SF-Pro-Display_msdf.png",
       "mipmap-level" : "base"
     }
-  ]
+  ],
+  "properties" : {
+    "level-mode" : "none"
+  }
 }

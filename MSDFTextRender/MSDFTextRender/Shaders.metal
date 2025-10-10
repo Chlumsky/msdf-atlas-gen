@@ -50,7 +50,6 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
     float msdf = max(min(sample.r, sample.g), min(max(sample.r, sample.g), sample.b));
     float2 screenTexSize = 1.0f / fwidth(in.texCoord);
     float screenPxRange = max(0.5f * dot(uniforms.unitRange, screenTexSize), 1.0f);
-    screenPxRange *= uniforms.smoothness;
     float screenPxDistance = screenPxRange * (msdf - 0.5f);
     float alpha = clamp(screenPxDistance + 0.5f, 0.0f, 1.0f);
     
