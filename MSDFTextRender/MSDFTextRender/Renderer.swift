@@ -40,7 +40,7 @@ class Renderer: NSObject, MTKViewDelegate {
     let baseFontSize: CGFloat = 36.0
     private let baseFont: CTFont
     private var currentFontSize: CGFloat
-    var atlasPxRange: Float
+    var atlasPxRange: SIMD2<Float>
     var atlasUnitRange = SIMD2<Float>(repeating: 0)
     var textColor = SIMD4<Float>(1, 1, 1, 1)
 
@@ -97,8 +97,7 @@ class Renderer: NSObject, MTKViewDelegate {
             atlasData = try MSDFAtlas.load(from: atlasJSONURL)
             atlasPxRange = atlasData.pxRange
             atlasTexture = try Renderer.loadTexture(device: device)
-            atlasUnitRange = SIMD2<Float>(atlasPxRange / Float(atlasTexture.width),
-                                          atlasPxRange / Float(atlasTexture.height))
+            atlasUnitRange = atlasPxRange / SIMD2<Float>(Float(atlasTexture.width), Float(atlasTexture.height))
         } catch {
             print("Unable to load atlas resources. Error: \(error)")
             return nil

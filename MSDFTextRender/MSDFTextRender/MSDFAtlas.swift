@@ -17,6 +17,7 @@ struct MSDFAtlas: Decodable {
 
     struct AtlasInfo: Decodable {
         let distanceRange: Float
+        let distanceRangeMiddle: Float
         let size: Float
         let width: Int
         let height: Int
@@ -53,8 +54,10 @@ struct MSDFAtlas: Decodable {
         CGSize(width: atlas.width, height: atlas.height)
     }
 
-    var pxRange: Float {
-        atlas.distanceRange
+    var pxRange: SIMD2<Float> {
+        SIMD2<Float>(
+            repeating: atlas.distanceRange,
+        )
     }
 
     func descriptor(for glyph: CGGlyph) -> GlyphDescriptor? {

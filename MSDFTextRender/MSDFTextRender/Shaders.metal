@@ -44,8 +44,8 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
                                texture2d<float> colorMap     [[ texture(TextureIndexColor) ]])
 {
     constexpr sampler colorSampler(address::clamp_to_edge,
-                                   filter::linear);
-    
+                                   filter::bicubic);
+
     float3 sample = colorMap.sample(colorSampler, in.texCoord).rgb;
     float msdf = max(min(sample.r, sample.g), min(max(sample.r, sample.g), sample.b));
     float2 screenTexSize = 1.0f / fwidth(in.texCoord);

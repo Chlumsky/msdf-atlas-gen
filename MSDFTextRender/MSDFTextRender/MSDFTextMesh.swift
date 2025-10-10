@@ -88,6 +88,7 @@ final class MSDFTextMeshBuilder {
 
         let atlasWidth = Float(atlas.textureSize.width)
         let atlasHeight = Float(atlas.textureSize.height)
+        let emSize = Float(CTFontGetSize(font))
 
         for (lineIndex, line) in lines.enumerated() {
             let lineOrigin = lineOrigins[lineIndex]
@@ -113,27 +114,61 @@ final class MSDFTextMeshBuilder {
                         continue
                     }
 
-                    var glyphRect = CTRunGetImageBounds(run, context, CFRange(location: glyphIndex, length: 1))
+                    let glyphOrigin = positionBuffer[glyphIndex]
+                    // Convert baseline to layout space (top-left origin, y-down).
+                    let baselineX = Float(frameBoundingRect.origin.x + lineOrigin.x + glyphOrigin.x)
+                    let baselineY = Float(frameBoundingRect.origin.y +
+                                          frameBoundingRect.height -
+                                          (lineOrigin.y + glyphOrigin.y))
 
-                    if glyphRect.isNull || glyphRect.isEmpty {
-                        continue
+                    var quadMinX: Float = 0
+                    var quadMaxX: Float = 0
+                    var quadMinY: Float = 0
+                    var quadMaxY: Float = 0
+
+                    if let planeBounds = descriptor.planeBounds {
+                        // Map plane bounds (em units, baseline-relative) into layout space.
+                        let left = baselineX + planeBounds.left * emSize
+                        let right = baselineX + planeBounds.right * emSize
+                        let top = baselineY - planeBounds.top * emSize
+                        let bottom = baselineY - planeBounds.bottom * emSize
+
+                        quadMinX = min(left, right)
+                        quadMaxX = max(left, right)
+                        quadMinY = min(top, bottom)
+                        quadMaxY = max(top, bottom)
+                    } else {
+                        var glyphRect = CTRunGetImageBounds(run,
+                                                            context,
+                                                            CFRange(location: glyphIndex, length: 1))
+
+                        if glyphRect.isNull || glyphRect.isEmpty {
+                            continue
+                        }
+
+                        let boundsTransX = frameBoundingRect.origin.x + lineOrigin.x
+                        let boundsTransY = frameBoundingRect.origin.y +
+                            frameBoundingRect.height -
+                            lineOrigin.y +
+                            glyphOrigin.y
+                        let transform = CGAffineTransform(a: 1,
+                                                          b: 0,
+                                                          c: 0,
+                                                          d: -1,
+                                                          tx: boundsTransX,
+                                                          ty: boundsTransY)
+                        glyphRect = glyphRect.applying(transform)
+
+                        quadMinX = Float(glyphRect.minX)
+                        quadMaxX = Float(glyphRect.maxX)
+                        quadMinY = Float(glyphRect.minY)
+                        quadMaxY = Float(glyphRect.maxY)
                     }
 
-                    let glyphOrigin = positionBuffer[glyphIndex]
-                    let boundsTransX = frameBoundingRect.origin.x + lineOrigin.x
-                    let boundsTransY = frameBoundingRect.origin.y + frameBoundingRect.height - lineOrigin.y + glyphOrigin.y
-                    let transform = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: boundsTransX, ty: boundsTransY)
-                    glyphRect = glyphRect.applying(transform)
-
-                    let minX = Float(glyphRect.minX)
-                    let maxX = Float(glyphRect.maxX)
-                    let minY = Float(glyphRect.minY)
-                    let maxY = Float(glyphRect.maxY)
-
-                    minPosition.x = min(minPosition.x, minX)
-                    minPosition.y = min(minPosition.y, minY)
-                    maxPosition.x = max(maxPosition.x, maxX)
-                    maxPosition.y = max(maxPosition.y, maxY)
+                    minPosition.x = min(minPosition.x, quadMinX)
+                    minPosition.y = min(minPosition.y, quadMinY)
+                    maxPosition.x = max(maxPosition.x, quadMaxX)
+                    maxPosition.y = max(maxPosition.y, quadMaxY)
 
                     let u0 = Float(atlasBounds.left) / atlasWidth
                     let u1 = Float(atlasBounds.right) / atlasWidth
@@ -141,13 +176,13 @@ final class MSDFTextMeshBuilder {
                     let v1 = 1.0 - Float(atlasBounds.bottom) / atlasHeight
 
                     let baseIndex = UInt32(vertices.count)
-                    vertices.append(MSDFGlyphVertex(position: SIMD3<Float>(minX, maxY, 0),
+                    vertices.append(MSDFGlyphVertex(position: SIMD3<Float>(quadMinX, quadMaxY, 0),
                                                     texCoord: SIMD2<Float>(u0, v1)))
-                    vertices.append(MSDFGlyphVertex(position: SIMD3<Float>(minX, minY, 0),
+                    vertices.append(MSDFGlyphVertex(position: SIMD3<Float>(quadMinX, quadMinY, 0),
                                                     texCoord: SIMD2<Float>(u0, v0)))
-                    vertices.append(MSDFGlyphVertex(position: SIMD3<Float>(maxX, minY, 0),
+                    vertices.append(MSDFGlyphVertex(position: SIMD3<Float>(quadMaxX, quadMinY, 0),
                                                     texCoord: SIMD2<Float>(u1, v0)))
-                    vertices.append(MSDFGlyphVertex(position: SIMD3<Float>(maxX, maxY, 0),
+                    vertices.append(MSDFGlyphVertex(position: SIMD3<Float>(quadMaxX, quadMaxY, 0),
                                                     texCoord: SIMD2<Float>(u1, v1)))
 
                     indices.append(contentsOf: [
