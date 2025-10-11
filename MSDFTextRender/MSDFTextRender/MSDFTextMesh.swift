@@ -1,10 +1,3 @@
-//
-//  MSDFTextMesh.swift
-//  MSDFTextRender
-//
-//  Created by Codex on 10/8/25.
-//
-
 import CoreText
 import Metal
 import simd

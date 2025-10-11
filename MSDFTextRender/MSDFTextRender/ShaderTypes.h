@@ -1,11 +1,4 @@
 //
-//  ShaderTypes.h
-//  MSDFTextRender
-//
-//  Created by Sihao Lu on 10/8/25.
-//
-
-//
 //  Header containing types and enum constants shared between Metal shaders and Swift/ObjC source
 //
 #ifndef ShaderTypes_h

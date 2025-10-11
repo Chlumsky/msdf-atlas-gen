@@ -1,10 +1,3 @@
-//
-//  AppDelegate.swift
-//  MSDFTextRender
-//
-//  Created by Sihao Lu on 10/8/25.
-//
-
 import UIKit
 
 @main
@@ -14,7 +7,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        let rootController = GameViewController()
+        let navigationController = UINavigationController(rootViewController: rootController)
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        self.window = window
         return true
     }
 
@@ -37,4 +35,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
 }
-

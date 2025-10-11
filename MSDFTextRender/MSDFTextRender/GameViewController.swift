@@ -1,10 +1,3 @@
-//
-//  GameViewController.swift
-//  MSDFTextRender
-//
-//  Created by Sihao Lu on 10/8/25.
-//
-
 import UIKit
 import MetalKit
 
@@ -14,26 +7,39 @@ class GameViewController: UIViewController {
     var renderer: Renderer!
     var mtkView: MTKView!
     
+    private let navigationTitle = "Render MSDF in Metal"
     private var zoomScale: CGFloat = 1.0
     private let minZoomScale: CGFloat = 0.5
     private let maxZoomScale: CGFloat = 3.0
 
+    override func loadView() {
+        let rootView = UIView()
+        rootView.backgroundColor = .black
+        view = rootView
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        guard let mtkView = view as? MTKView else {
-            print("View of Gameview controller is not an MTKView")
-            return
-        }
+        navigationItem.title = navigationTitle
+        configureNavigationBar()
 
-        // Select the device to render with.  We choose the default device
         guard let defaultDevice = MTLCreateSystemDefaultDevice() else {
             print("Metal is not supported")
             return
         }
+        mtkView = MTKView(frame: .zero, device: defaultDevice)
+        mtkView.translatesAutoresizingMaskIntoConstraints = false
         
-        mtkView.device = defaultDevice
         mtkView.backgroundColor = UIColor.black
+        view.addSubview(mtkView)
+
+        NSLayoutConstraint.activate([
+            mtkView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            mtkView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            mtkView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            mtkView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+        ])
 
         guard let newRenderer = Renderer(metalKitView: mtkView) else {
             print("Renderer cannot be initialized")
@@ -41,7 +47,6 @@ class GameViewController: UIViewController {
         }
 
         renderer = newRenderer
-        self.mtkView = mtkView
 
         renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
 
@@ -56,6 +61,16 @@ class GameViewController: UIViewController {
         super.viewDidLayoutSubviews()
         guard let mtkView = mtkView else { return }
         renderer?.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        configureNavigationBar()
+    }
+    
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        renderer?.rebuildTextMeshForCurrentView()
     }
     
     private func configureGestureRecognizers(for view: MTKView) {
@@ -84,5 +99,24 @@ class GameViewController: UIViewController {
         default:
             break
         }
+    }
+    
+    private func configureNavigationBar() {
+        guard let navigationBar = navigationController?.navigationBar else { return }
+        navigationController?.navigationBar.prefersLargeTitles = false
+        navigationController?.navigationBar.tintColor = .white
+        if #available(iOS 13.0, *) {
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithDefaultBackground()
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+            navigationBar.standardAppearance = appearance
+            navigationBar.scrollEdgeAppearance = appearance
+            navigationBar.compactAppearance = appearance
+        } else {
+            navigationBar.barTintColor = .black
+            navigationBar.titleTextAttributes = [.foregroundColor: UIColor.white]
+        }
+        navigationBar.isTranslucent = false
     }
 }

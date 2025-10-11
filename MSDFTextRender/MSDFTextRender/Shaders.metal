@@ -1,10 +1,3 @@
-//
-//  Shaders.metal
-//  MSDFTextRender
-//
-//  Created by Sihao Lu on 10/8/25.
-//
-
 // File for Metal kernel and shader functions
 
 #include <metal_stdlib>

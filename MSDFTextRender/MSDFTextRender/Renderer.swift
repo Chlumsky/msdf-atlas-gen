@@ -36,7 +36,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var projectionMatrix: matrix_float4x4 = matrix_identity_float4x4
     var zoomScale: CGFloat = 1.0
     
-    let margin: CGFloat = 24.0
+    let margin: CGFloat = 16.0
     let baseFontSize: CGFloat = 36.0
     private let baseFont: CTFont
     private var currentFontSize: CGFloat
@@ -339,22 +339,11 @@ class Renderer: NSObject, MTKViewDelegate {
     }
     
     private static func composeParagraphText() -> String {
-        let english = """
-        English:
-        It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair.
+        return """
+        ABCDEFGHIJKLMNOPQRSTUVWXYZ
+        abcdefghijklmnopqrstuvwxyz
+        1234567890
         """
-        
-        let russian = """
-        Русский:
-        Это было лучшее из времен, это было худшее из времен; это была эпоха мудрости, это была эпоха глупости; это была пора веры, это была пора неверия; это был сезон Света, это был сезон Тьмы; это была весна надежды, это была зима отчаяния.
-        """
-        
-        let greek = """
-        Ελληνικά:
-        Ήταν οι καλύτερες εποχές, ήταν οι χειρότερες εποχές· ήταν η εποχή της σοφίας, ήταν η εποχή της ανοησίας· ήταν η περίοδος της πίστης, ήταν η περίοδος της απιστίας· ήταν η εποχή του Φωτός, ήταν η εποχή του Σκότους· ήταν η άνοιξη της ελπίδας, ήταν ο χειμώνας της απελπισίας.
-        """
-        
-        return [english, russian, greek].joined(separator: "\n\n")
     }
 }
 

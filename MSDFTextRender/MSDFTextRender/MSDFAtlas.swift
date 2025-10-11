@@ -1,10 +1,3 @@
-//
-//  MSDFAtlas.swift
-//  MSDFTextRender
-//
-//  Created by Codex on 10/8/25.
-//
-
 import CoreGraphics
 import Foundation
 
