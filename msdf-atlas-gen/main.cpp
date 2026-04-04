@@ -335,7 +335,8 @@ static bool makeAtlas(const std::vector<GlyphGeometry> &glyphs, const std::vecto
     generator.setAttributes(config.generatorAttributes);
     generator.setThreadCount(config.threadCount);
     generator.generate(glyphs.data(), glyphs.size());
-    msdfgen::BitmapConstSection<T, N> bitmap = (msdfgen::BitmapConstSection<T, N>) generator.atlasStorage();
+    msdfgen::BitmapConstRef<T, N> bitmapRef = static_cast<msdfgen::BitmapConstRef<T, N>>(generator.atlasStorage());
+    msdfgen::BitmapConstSection<T, N> bitmap(bitmapRef);
     bitmap.reorient(config.yDirection);
 
     bool success = true;
