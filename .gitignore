@@ -18,6 +18,14 @@
 *.suo
 *.VC.opendb
 *.VC.db
+*.log
+*.a
+*.cmake
+CMakeCache.txt
+Makefile
+compile_commands.json
+CMakeFiles
+vcpkg_installed
 /bin/*.lib
 /bin/msdf-atlas-gen
 output.png
