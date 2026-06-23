@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "rectangle-packing.h"
 
 #include <vector>

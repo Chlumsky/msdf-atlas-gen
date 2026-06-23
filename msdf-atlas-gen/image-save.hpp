@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "image-save.h"
 
 #include <cstdio>

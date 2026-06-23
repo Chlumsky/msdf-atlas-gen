@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "BitmapAtlasStorage.h"
 
 #include <cstring>

@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "DynamicAtlas.h"
 
 #include "utils.hpp"
